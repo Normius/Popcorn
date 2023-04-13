@@ -11,6 +11,42 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
+///////////////////MINE///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+enum EBrickColor
+{
+    NONE,
+    PURPLE,
+    BLUE
+};
+
+const unsigned int ResolutionScale = 3;
+const unsigned int BrickWidth = 15;
+const unsigned int BrickHeight = 7;
+const unsigned int CellWidth = 16; //BrickWidth + 1 pxl for gorizontal space between bricks
+const unsigned int CellHeight = 8; //Brickheight + 1 pxl for vertical space between bricks
+const int LevelOffset_X = 8;
+const int LevelOffset_Y = 6;
+
+char LevelFirst[14][12]
+{
+    0,0,0,0,0,0,0,0,0,0,0,0,
+    1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,
+    2,2,2,2,2,2,2,2,2,2,2,2,
+    2,2,2,2,2,2,2,2,2,2,2,2,
+    1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,
+    2,2,2,2,2,2,2,2,2,2,2,2,
+    2,2,2,2,2,2,2,2,2,2,2,2,
+    0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,
+};
+/////////////////////////////////////////////////////////////
+
+
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -97,7 +133,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
-   //////////////////////Mine/////////////////////////////////////
+   //////////////////////Mine///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    // Create a window with certain size (resolution), consider menu (only working window's space)
    RECT windowRect;
    windowRect.left = 0;
@@ -123,11 +159,49 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
-////////////////MINE///////////////////////////
+////////////////MINE/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Draw every frame in game
-void DrawFrame(HDC hdc)
+
+void DrawBrick(HDC hdc, int x, int y, char brickColor) //TO DO: change char param to ENUM ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 {
 
+    HPEN pen = CreatePen(PS_NULL, 0, RGB(0, 0, 0));
+    HBRUSH brush = CreateSolidBrush(RGB(0, 0, 0));
+
+    switch (brickColor)
+    {
+        case PURPLE:
+            {
+                pen = CreatePen(PS_SOLID, 0, RGB(255, 85, 255));
+                brush = CreateSolidBrush(RGB(255, 85, 255));
+            } 
+            break;
+        case BLUE:
+            {
+                pen = CreatePen(PS_SOLID, 0, RGB(85, 255, 255));
+                brush = CreateSolidBrush(RGB(85, 255, 255));
+            }
+            break;
+        default: //Nothing, empty
+            return;
+    }
+
+    SelectObject(hdc, pen);
+    SelectObject(hdc, brush);
+
+    Rectangle(hdc, x * ResolutionScale, y * ResolutionScale, (x + BrickWidth) * ResolutionScale, (y + BrickHeight) * ResolutionScale);
+}
+
+
+void DrawFrame(HDC hdc)
+{
+    for (int i = 0; i < 14; ++i)
+    { 
+        for (int j = 0; j < 12; ++j)
+        {
+            DrawBrick(hdc, LevelOffset_X + j * CellWidth, LevelOffset_Y + i * CellHeight, LevelFirst[i][j]); //TO DO: Cast to ENUM or NOT? ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        }
+    }
 }
 
 //
