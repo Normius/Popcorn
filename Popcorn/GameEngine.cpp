@@ -89,27 +89,35 @@ void DrawBrick(HDC hdc, int x, int y, char brickColor) //TO DO: change char para
 }
 
 
-void DrawLetterBrick(HDC hdc, int rotationStep)
+void DrawLetterBrick(HDC hdc, int x, int y, unsigned int rotationStep)
 {
-    float rotationAngle = 2.0f * static_cast<float>(M_PI) / 16.0f * static_cast<float>(rotationStep); //Bricks turning around 16x times while falling. Multiply rotationAngle (1/16) by rotation step
     XFORM xForm, oldXForm;
+    
+    float rotationAngle = 2.0f * static_cast<float>(M_PI) / 16.0f * static_cast<float>(rotationStep); //Bricks turning around 16x times while falling. Multiply rotationAngle (1/16) by rotation step
+    
+    int brickMiddleAxis_Y = BrickHeight * ResolutionScale / 2;
 
     SetGraphicsMode(hdc, GM_ADVANCED);
 
-    xForm.eM11 = cos(rotationAngle);
-    xForm.eM12 = sin(rotationAngle);
-    xForm.eM21 = -sin(rotationAngle);
+    xForm.eM11 = 1.0f;
+    xForm.eM12 = 0.0f;
+    xForm.eM21 = 0.0f;
     xForm.eM22 = cos(rotationAngle);
-    xForm.eDx = (FLOAT)100.0;
-    xForm.eDy = (FLOAT)100.0;
+    xForm.eDx = (FLOAT)x;
+    xForm.eDy = (FLOAT)y + static_cast<float>(brickMiddleAxis_Y);
     GetWorldTransform(hdc, &oldXForm);
     SetWorldTransform(hdc, &xForm);
 
+    SelectObject(hdc, PurplePen);
+    SelectObject(hdc, PurpleBrush);
+
+    Rectangle(hdc, 0, -brickMiddleAxis_Y - ResolutionScale, BrickWidth * ResolutionScale, brickMiddleAxis_Y - ResolutionScale);
 
     SelectObject(hdc, BluePen);
     SelectObject(hdc, BlueBrush);
 
-    Rectangle(hdc, 0, 0, 15 * ResolutionScale, 7 * ResolutionScale);
+    Rectangle(hdc, 0, -brickMiddleAxis_Y, BrickWidth * ResolutionScale, brickMiddleAxis_Y);
+
     SetWorldTransform(hdc, &xForm);
 }
 
@@ -160,8 +168,8 @@ void DrawFrame(HDC hdc)
     //DrawLevel(hdc);
 
     //DrawPlatform(hdc, 50, 100);
-    for (int i = 1; i < 17; ++i)
+    for (unsigned int i = 0; i < 17; ++i)
     {
-        DrawLetterBrick(hdc, i);
+        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 100 , i);
     }
 }
