@@ -91,32 +91,54 @@ void DrawBrick(HDC hdc, int x, int y, char brickColor) //TO DO: change char para
 
 void DrawLetterBrick(HDC hdc, int x, int y, unsigned int rotationStep)
 {
-    XFORM xForm, oldXForm;
     
     float rotationAngle = 2.0f * static_cast<float>(M_PI) / 16.0f * static_cast<float>(rotationStep); //Bricks turning around 16x times while falling. Multiply rotationAngle (1/16) by rotation step
-    
-    int brickMiddleAxis_Y = BrickHeight * ResolutionScale / 2;
+    float offset = 0.0f;
 
-    SetGraphicsMode(hdc, GM_ADVANCED);
+    int brickMiddleAxis_Y = BrickHeight * ResolutionScale / 2; //brick Rotation Axis
+    int backSideBrickOffset = 0;
+
+    XFORM xForm, oldXForm;
+
+    SetGraphicsMode(hdc, GM_ADVANCED); //Allows WorldTransformations (rotate plane, not the object itself
 
     xForm.eM11 = 1.0f;
     xForm.eM12 = 0.0f;
     xForm.eM21 = 0.0f;
     xForm.eM22 = cos(rotationAngle);
     xForm.eDx = (FLOAT)x;
-    xForm.eDy = (FLOAT)y + static_cast<float>(brickMiddleAxis_Y);
+    xForm.eDy = (FLOAT)y;
     GetWorldTransform(hdc, &oldXForm);
     SetWorldTransform(hdc, &xForm);
 
-    SelectObject(hdc, PurplePen);
-    SelectObject(hdc, PurpleBrush);
+    if (rotationStep == 4 || rotationStep == 12)
+    {
+        SelectObject(hdc, PurplePen);
+        SelectObject(hdc, PurpleBrush);
 
-    Rectangle(hdc, 0, -brickMiddleAxis_Y - ResolutionScale, BrickWidth * ResolutionScale, brickMiddleAxis_Y - ResolutionScale);
+        Rectangle(hdc, 0, brickMiddleAxis_Y - ResolutionScale, BrickWidth * ResolutionScale, brickMiddleAxis_Y);
 
-    SelectObject(hdc, BluePen);
-    SelectObject(hdc, BlueBrush);
+        SelectObject(hdc, BluePen);
+        SelectObject(hdc, BlueBrush);
 
-    Rectangle(hdc, 0, -brickMiddleAxis_Y, BrickWidth * ResolutionScale, brickMiddleAxis_Y);
+        Rectangle(hdc, 0, brickMiddleAxis_Y, BrickWidth * ResolutionScale, brickMiddleAxis_Y + ResolutionScale);
+    }
+
+    else
+    {
+        SelectObject(hdc, PurplePen);
+        SelectObject(hdc, PurpleBrush);
+
+        offset = 3.0f * (1.0f - fabs(xForm.eM22)) * static_cast<float>(ResolutionScale); // TO DO: Change rotation function (from 0 to 3, then 3 to 0 etc) May be use COS or SIN
+        backSideBrickOffset = static_cast<int>(round(offset));
+
+        Rectangle(hdc, 0, -brickMiddleAxis_Y - backSideBrickOffset, BrickWidth * ResolutionScale, brickMiddleAxis_Y - backSideBrickOffset);
+
+        SelectObject(hdc, BluePen);
+        SelectObject(hdc, BlueBrush);
+
+        Rectangle(hdc, 0, -brickMiddleAxis_Y, BrickWidth * ResolutionScale, brickMiddleAxis_Y);
+    }
 
     SetWorldTransform(hdc, &xForm);
 }
@@ -168,7 +190,7 @@ void DrawFrame(HDC hdc)
     //DrawLevel(hdc);
 
     //DrawPlatform(hdc, 50, 100);
-    for (unsigned int i = 0; i < 17; ++i)
+    for (unsigned int i = 0; i < 16; ++i)
     {
         DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 100 , i);
     }
