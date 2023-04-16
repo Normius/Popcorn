@@ -4,6 +4,13 @@
 #include <cmath>
 
 ///////////////////MINE///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+enum EBrickLetter
+{
+    Letter_NONE,
+    Letter_O
+};
+
 enum EBrickColor
 {
     NONE,
@@ -11,8 +18,8 @@ enum EBrickColor
     BLUE
 };
 
-HPEN PurplePen, BluePen, OrangePen, GreenPen, GreyPen;
-HBRUSH PurpleBrush, BlueBrush, OrangeBrush, GreenBrush, GreyBrush;
+HPEN PurplePen, BluePen, OrangePen, GreenPen, GreyPen, WhitePen;
+HBRUSH PurpleBrush, BlueBrush, OrangeBrush, GreenBrush, GreyBrush, WhiteBrush;
 
 const unsigned int ResolutionScale = 3;
 const unsigned int BrickWidth = 15;
@@ -61,7 +68,8 @@ void Init()
 
     CreatePenAndBrush(0, 128, 0, GreenPen, GreenBrush);
 
-    CreatePenAndBrush(225, 225, 225, GreyPen, GreyBrush);
+    GreyPen = CreatePen(PS_SOLID, 0, RGB(225, 225, 225));
+    WhitePen = CreatePen(PS_SOLID, ResolutionScale, RGB(255, 255, 255));
 }
 
 ////////////////MINE/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -100,7 +108,7 @@ void SwapSideColors(HPEN& frontSidePen, HPEN& backSidePen, HBRUSH& frontSideBrus
     backSideBrush = tempBrush;
 }
 
-void DrawLetterBrick(HDC hdc, int x, int y, char brickMainColor, int rotationStep)
+void DrawLetterBrick(HDC hdc, int x, int y, EBrickColor brickMainColor, EBrickLetter brickLetter, int rotationStep)
 {
     float rotationAngle;
     float offset = 0.0f;
@@ -142,7 +150,7 @@ void DrawLetterBrick(HDC hdc, int x, int y, char brickMainColor, int rotationSte
         backSideBrush = PurpleBrush;
     }
 
-    if (rotationStep > 4 && rotationStep < 12)
+    if (rotationStep > 4 && rotationStep < 13)
     {
         SwapSideColors(frontSidePen, backSidePen, frontSideBrush, backSideBrush);
     }
@@ -191,6 +199,22 @@ void DrawLetterBrick(HDC hdc, int x, int y, char brickMainColor, int rotationSte
 
         Rectangle(hdc, 0, -brickMiddleAxis_Y, BrickWidth * ResolutionScale, brickMiddleAxis_Y);
 
+        if (rotationStep > 4 && rotationStep < 13)
+        {
+            SelectObject(hdc, WhitePen);
+            switch (brickLetter)
+            {
+                case Letter_O:
+                {
+                    Ellipse(hdc, 0 + 5 * ResolutionScale, -brickMiddleAxis_Y + ResolutionScale, 0 + 10 * ResolutionScale, brickMiddleAxis_Y - ResolutionScale);
+                }
+                break;
+                default: //Nothing, empty
+                    return;
+            }
+            
+        }
+        
         SetWorldTransform(hdc, &oldXForm);
     }
 }
@@ -244,7 +268,7 @@ void DrawFrame(HDC hdc)
     //DrawPlatform(hdc, 50, 100);
     for (int i = 0; i < 16; ++i)
     {
-        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 100 , EBrickColor::BLUE, i);
-        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 130, EBrickColor::PURPLE, i);
+        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 100, EBrickColor::BLUE, EBrickLetter::Letter_O, i);
+        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 130, EBrickColor::PURPLE, EBrickLetter::Letter_O, i);
     }
 }
