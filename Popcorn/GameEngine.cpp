@@ -70,28 +70,27 @@ void DrawBrick(HDC hdc, int x, int y, char brickColor) //TO DO: change char para
 {
     switch (brickColor)
     {
-    case PURPLE:
-    {
-        SelectObject(hdc, PurplePen);
-        SelectObject(hdc, PurpleBrush);
-    }
-    break;
-    case BLUE:
-    {
-        SelectObject(hdc, BluePen);
-        SelectObject(hdc, BlueBrush);
-    }
-    break;
-    default: //Nothing, empty
-        return;
+        case PURPLE:
+        {
+            SelectObject(hdc, PurplePen);
+            SelectObject(hdc, PurpleBrush);
+        }
+        break;
+        case BLUE:
+        {
+            SelectObject(hdc, BluePen);
+            SelectObject(hdc, BlueBrush);
+        }
+        break;
+        default: //Nothing, empty
+            return;
     }
     RoundRect(hdc, x * ResolutionScale, y * ResolutionScale, (x + BrickWidth) * ResolutionScale, (y + BrickHeight) * ResolutionScale, 2 * ResolutionScale, 2 * ResolutionScale);
 }
 
 
-void DrawLetterBrick(HDC hdc, int x, int y, unsigned int rotationStep)
+void DrawLetterBrick(HDC hdc, int x, int y, char brickFrontColor, int rotationStep)
 {
-    
     float rotationAngle = 2.0f * static_cast<float>(M_PI) / 16.0f * static_cast<float>(rotationStep); //Bricks turning around 16x times while falling. Multiply rotationAngle (1/16) by rotation step
     float offset = 0.0f;
 
@@ -100,47 +99,91 @@ void DrawLetterBrick(HDC hdc, int x, int y, unsigned int rotationStep)
 
     XFORM xForm, oldXForm;
 
-    SetGraphicsMode(hdc, GM_ADVANCED); //Allows WorldTransformations (rotate plane, not the object itself
+    HPEN frontSidePen, backSidePen;
 
-    xForm.eM11 = 1.0f;
-    xForm.eM12 = 0.0f;
-    xForm.eM21 = 0.0f;
-    xForm.eM22 = cos(rotationAngle);
-    xForm.eDx = (FLOAT)x;
-    xForm.eDy = (FLOAT)y;
-    GetWorldTransform(hdc, &oldXForm);
-    SetWorldTransform(hdc, &xForm);
+    HBRUSH frontSideBrush, backSideBrush;
 
-    if (rotationStep == 4 || rotationStep == 12)
+    switch (brickFrontColor)
     {
-        SelectObject(hdc, PurplePen);
-        SelectObject(hdc, PurpleBrush);
+        case PURPLE:
+        {
+            frontSidePen = PurplePen;
+            frontSideBrush = PurpleBrush;
+        
+        }
+        break;
+        case BLUE:
+        {
+            backSidePen = BluePen;
+            backSideBrush = BlueBrush;
+        }
+        default: //Nothing, empty
+            return;
+    }
+    //TO DO: CHANGE COLOR
+    if (rotationStep > 4 && rotationStep < 12)
+    {
+        frontSidePen = BluePen;
+        frontSideBrush = BlueBrush;
 
-        Rectangle(hdc, 0, brickMiddleAxis_Y - ResolutionScale, BrickWidth * ResolutionScale, brickMiddleAxis_Y);
-
-        SelectObject(hdc, BluePen);
-        SelectObject(hdc, BlueBrush);
-
-        Rectangle(hdc, 0, brickMiddleAxis_Y, BrickWidth * ResolutionScale, brickMiddleAxis_Y + ResolutionScale);
+        backSidePen = PurplePen;
+        backSideBrush = PurpleBrush;
     }
 
     else
     {
-        SelectObject(hdc, PurplePen);
-        SelectObject(hdc, PurpleBrush);
+        frontSidePen = PurplePen;
+        frontSideBrush = PurpleBrush;
 
+        backSidePen = BluePen;
+        backSideBrush = BlueBrush;
+    }
+
+    if (rotationStep == 4 || rotationStep == 12) //Steps for 90 degrees rotation without transformation (display bottom and top sides)
+    {
+        //Display front side
+        SelectObject(hdc, frontSidePen);
+        SelectObject(hdc, frontSideBrush);
+
+        Rectangle(hdc, x, y + brickMiddleAxis_Y - ResolutionScale, x + BrickWidth * ResolutionScale, y+brickMiddleAxis_Y);
+
+        //Display backside
+        SelectObject(hdc, backSidePen);
+        SelectObject(hdc, backSideBrush);
+
+        Rectangle(hdc, x, y + brickMiddleAxis_Y, x + BrickWidth * ResolutionScale, y + brickMiddleAxis_Y + ResolutionScale - 1);
+    }
+    else
+    {
+        SetGraphicsMode(hdc, GM_ADVANCED); //Allows WorldTransformations (rotate plane, not the object itself)
+        xForm.eM11 = 1.0f;
+        xForm.eM12 = 0.0f;
+        xForm.eM21 = 0.0f;
+        xForm.eM22 = cos(rotationAngle);
+        xForm.eDx = (float)x;
+        xForm.eDy = (float)y + static_cast<float>(brickMiddleAxis_Y);
+
+        GetWorldTransform(hdc, &oldXForm); //Save default transformation
+        SetWorldTransform(hdc, &xForm); 
+
+        //Rotation dynamic offset for front and backside
         offset = 3.0f * (1.0f - fabs(xForm.eM22)) * static_cast<float>(ResolutionScale); // TO DO: Change rotation function (from 0 to 3, then 3 to 0 etc) May be use COS or SIN
         backSideBrickOffset = static_cast<int>(round(offset));
 
+        //Display front side
+        SelectObject(hdc, frontSidePen);
+        SelectObject(hdc, frontSideBrush);
+
         Rectangle(hdc, 0, -brickMiddleAxis_Y - backSideBrickOffset, BrickWidth * ResolutionScale, brickMiddleAxis_Y - backSideBrickOffset);
 
-        SelectObject(hdc, BluePen);
-        SelectObject(hdc, BlueBrush);
+        //Display backside
+        SelectObject(hdc, backSidePen);
+        SelectObject(hdc, backSideBrush);
 
         Rectangle(hdc, 0, -brickMiddleAxis_Y, BrickWidth * ResolutionScale, brickMiddleAxis_Y);
-    }
 
-    SetWorldTransform(hdc, &xForm);
+        SetWorldTransform(hdc, &oldXForm);
+    }
 }
 
 // Draw all bricks on level
@@ -190,8 +233,9 @@ void DrawFrame(HDC hdc)
     //DrawLevel(hdc);
 
     //DrawPlatform(hdc, 50, 100);
-    for (unsigned int i = 0; i < 16; ++i)
+    for (int i = 0; i < 16; ++i)
     {
-        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 100 , i);
+        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 100 , EBrickColor::BLUE, i);
+        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 130, EBrickColor::PURPLE, i);
     }
 }
