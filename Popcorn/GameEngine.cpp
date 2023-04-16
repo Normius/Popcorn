@@ -88,10 +88,21 @@ void DrawBrick(HDC hdc, int x, int y, char brickColor) //TO DO: change char para
     RoundRect(hdc, x * ResolutionScale, y * ResolutionScale, (x + BrickWidth) * ResolutionScale, (y + BrickHeight) * ResolutionScale, 2 * ResolutionScale, 2 * ResolutionScale);
 }
 
-
-void DrawLetterBrick(HDC hdc, int x, int y, char brickFrontColor, int rotationStep)
+void SwapSideColors(HPEN& frontSidePen, HPEN& backSidePen, HBRUSH& frontSideBrush, HBRUSH& backSideBrush) //Swap frontside with backside colors
 {
-    float rotationAngle = 2.0f * static_cast<float>(M_PI) / 16.0f * static_cast<float>(rotationStep); //Bricks turning around 16x times while falling. Multiply rotationAngle (1/16) by rotation step
+    HPEN tempPen = frontSidePen;
+    HBRUSH tempBrush = frontSideBrush;
+
+    frontSidePen = backSidePen;
+    frontSideBrush = backSideBrush;
+
+    backSidePen = tempPen;
+    backSideBrush = tempBrush;
+}
+
+void DrawLetterBrick(HDC hdc, int x, int y, char brickMainColor, int rotationStep)
+{
+    float rotationAngle;
     float offset = 0.0f;
 
     int brickMiddleAxis_Y = BrickHeight * ResolutionScale / 2; //brick Rotation Axis
@@ -103,25 +114,26 @@ void DrawLetterBrick(HDC hdc, int x, int y, char brickFrontColor, int rotationSt
 
     HBRUSH frontSideBrush, backSideBrush;
 
-    switch (brickFrontColor)
+    rotationStep = rotationStep % 16;
+
+    if (rotationStep < 8)
     {
-        case PURPLE:
-        {
-            frontSidePen = PurplePen;
-            frontSideBrush = PurpleBrush;
-        
-        }
-        break;
-        case BLUE:
-        {
-            backSidePen = BluePen;
-            backSideBrush = BlueBrush;
-        }
-        default: //Nothing, empty
-            return;
+        rotationAngle = 2.0f * static_cast<float>(M_PI) / 16.0f * static_cast<float>(rotationStep); //Brick turning around 16x times while falling. Multiply rotationAngle (1/16) by rotation step
     }
-    //TO DO: CHANGE COLOR
-    if (rotationStep > 4 && rotationStep < 12)
+    else
+    {
+        rotationAngle = 2.0f * static_cast<float>(M_PI) / 16.0f * static_cast<float>(rotationStep - 8);
+    }
+
+    if (brickMainColor == PURPLE) //Define front/backside color
+    {
+        frontSidePen = PurplePen;
+        frontSideBrush = PurpleBrush;
+
+        backSidePen = BluePen;
+        backSideBrush = BlueBrush;
+    }
+    else
     {
         frontSidePen = BluePen;
         frontSideBrush = BlueBrush;
@@ -130,13 +142,9 @@ void DrawLetterBrick(HDC hdc, int x, int y, char brickFrontColor, int rotationSt
         backSideBrush = PurpleBrush;
     }
 
-    else
+    if (rotationStep > 4 && rotationStep < 12)
     {
-        frontSidePen = PurplePen;
-        frontSideBrush = PurpleBrush;
-
-        backSidePen = BluePen;
-        backSideBrush = BlueBrush;
+        SwapSideColors(frontSidePen, backSidePen, frontSideBrush, backSideBrush);
     }
 
     if (rotationStep == 4 || rotationStep == 12) //Steps for 90 degrees rotation without transformation (display bottom and top sides)
@@ -156,6 +164,7 @@ void DrawLetterBrick(HDC hdc, int x, int y, char brickFrontColor, int rotationSt
     else
     {
         SetGraphicsMode(hdc, GM_ADVANCED); //Allows WorldTransformations (rotate plane, not the object itself)
+
         xForm.eM11 = 1.0f;
         xForm.eM12 = 0.0f;
         xForm.eM21 = 0.0f;
