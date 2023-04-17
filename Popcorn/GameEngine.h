@@ -2,6 +2,15 @@
 
 #include <Windows.h>
 
-void Init();
+enum EKeyType
+{
+    LeftArrowKey,
+    RightArrowKey,
+    SpaceKey
+};
 
-void DrawFrame(HDC hdc);
+void InitGameEngine(HWND hwnd);
+
+void DrawFrame(HDC hdc, RECT& paintarea);
+
+int OnKeyDown(EKeyType keyType);

@@ -97,8 +97,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
-   Init();
-
    //////////////////////Mine///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    // Create a window with certain size (resolution), consider menu (only working window's space)
    RECT windowRect;
@@ -109,7 +107,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, TRUE);
 
-   ////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       0, 0, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, nullptr, nullptr, hInstance, nullptr);
@@ -118,6 +116,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
+
+   //////////////////////////////////////////////////////////////////////////////////////////MINE///////////////////////////////////////////////////////////////////////
+   InitGameEngine(hWnd);
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -158,11 +159,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_PAINT:
         {
+        //////////////////////////////////////////////////////////////////////////////////////////MINE///////////////////////////////////////////////////////////////////////
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Add any drawing code that uses hdc here...
 
-            DrawFrame(hdc);
+            DrawFrame(hdc, ps.rcPaint);
 
             EndPaint(hWnd, &ps);
         }
@@ -170,6 +172,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
+        //////////////////////////////////////////////////////////////////////////////////////////MINE///////////////////////////////////////////////////////////////////////
+    case WM_KEYDOWN:
+        switch (wParam)
+        {
+        case VK_LEFT:
+            return OnKeyDown(LeftArrowKey);
+
+        case VK_RIGHT:
+            return OnKeyDown(RightArrowKey);
+
+        case VK_SPACE:
+            return OnKeyDown(SpaceKey);
+        }
+        break;
+
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }

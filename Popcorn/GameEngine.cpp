@@ -18,8 +18,9 @@ enum EBrickColor
     BLUE
 };
 
-HPEN PurplePen, BluePen, OrangePen, GreenPen, GreyPen, WhitePen;
-HBRUSH PurpleBrush, BlueBrush, OrangeBrush, GreenBrush, GreyBrush, WhiteBrush;
+HWND HWnd;
+HPEN PurplePen, BluePen, OrangePen, GreenPen, GreyPen, WhitePen, BlackPen;
+HBRUSH PurpleBrush, BlueBrush, OrangeBrush, GreenBrush, GreyBrush, WhiteBrush, BlackBrush;
 
 const unsigned int ResolutionScale = 3;
 const unsigned int BrickWidth = 15;
@@ -29,10 +30,21 @@ const unsigned int CellHeight = 8; //Brickheight + 1 pxl for vertical space betw
 const int LevelOffset_X = 8;
 const int LevelOffset_Y = 6;
 const unsigned int CircleSize = 7;
+const int PlatformPos_Y = 185;
+const unsigned PlatformHeight = 7;
 
+int PlatformWidth = 28;
+int PlatformPos_X = 0;
+int PlatformStep_X = ResolutionScale;
 int SpaceBetweenCircles = 21;
 
-char LevelFirst[14][12]
+RECT PlatformRect, OldPlatformRect;
+RECT LevelRect;
+
+const unsigned int LevelWidthSize = 12; //Width in Bricks
+const unsigned int LevelHeightSize = 14; //Height in Bricks
+
+char LevelFirst[LevelHeightSize][LevelWidthSize]
 {
     0,0,0,0,0,0,0,0,0,0,0,0,
     1,1,1,1,1,1,1,1,1,1,1,1,
@@ -57,9 +69,12 @@ void CreatePenAndBrush(unsigned char r, unsigned char g, unsigned char b, HPEN &
     brush = CreateSolidBrush(RGB(r, g, b));
 }
 
-//Настройка и инициализация игры при старте 
-void Init()
+//Setup and initialize game resources on start
+void InitGameEngine(HWND hWnd)
 {
+    //Initialize window handle by value from Main
+    HWnd = hWnd;
+
     CreatePenAndBrush(255, 85, 255, PurplePen, PurpleBrush);
 
     CreatePenAndBrush(85, 255, 255, BluePen, BlueBrush);
@@ -68,8 +83,21 @@ void Init()
 
     CreatePenAndBrush(0, 128, 0, GreenPen, GreenBrush);
 
+    CreatePenAndBrush(0, 0, 0, BlackPen, BlackBrush);
+
     GreyPen = CreatePen(PS_SOLID, 0, RGB(225, 225, 225));
     WhitePen = CreatePen(PS_SOLID, ResolutionScale, RGB(255, 255, 255));
+
+    //Initialize first platform position for background rectangle (for clear background after moving platform)
+    PlatformRect.left = (LevelOffset_X + PlatformPos_X) * ResolutionScale;
+    PlatformRect.top = PlatformPos_Y * ResolutionScale;
+    PlatformRect.right = (LevelOffset_X + PlatformPos_X + PlatformWidth) * ResolutionScale;
+    PlatformRect.bottom = (PlatformPos_Y + PlatformHeight) * ResolutionScale;
+
+    LevelRect.left = LevelOffset_X * ResolutionScale;
+    LevelRect.top = LevelOffset_Y * ResolutionScale;
+    LevelRect.right = LevelRect.left + CellWidth * LevelHeightSize * ResolutionScale;
+    LevelRect.bottom = LevelRect.top + CellHeight * LevelWidthSize * ResolutionScale;
 }
 
 ////////////////MINE/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,7 +124,7 @@ void DrawBrick(HDC hdc, int x, int y, char brickColor) //TO DO: change char para
     RoundRect(hdc, x * ResolutionScale, y * ResolutionScale, (x + BrickWidth) * ResolutionScale, (y + BrickHeight) * ResolutionScale, 2 * ResolutionScale, 2 * ResolutionScale);
 }
 
-void SwapSideColors(HPEN& frontSidePen, HPEN& backSidePen, HBRUSH& frontSideBrush, HBRUSH& backSideBrush) //Swap frontside with backside colors
+void SwapBrickColors(HPEN& frontSidePen, HPEN& backSidePen, HBRUSH& frontSideBrush, HBRUSH& backSideBrush) //Swap frontside with backside colors
 {
     HPEN tempPen = frontSidePen;
     HBRUSH tempBrush = frontSideBrush;
@@ -108,6 +136,7 @@ void SwapSideColors(HPEN& frontSidePen, HPEN& backSidePen, HBRUSH& frontSideBrus
     backSideBrush = tempBrush;
 }
 
+// Draw a brick with letter
 void DrawLetterBrick(HDC hdc, int x, int y, EBrickColor brickMainColor, EBrickLetter brickLetter, int rotationStep)
 {
     float rotationAngle;
@@ -152,7 +181,7 @@ void DrawLetterBrick(HDC hdc, int x, int y, EBrickColor brickMainColor, EBrickLe
 
     if (rotationStep > 4 && rotationStep < 13)
     {
-        SwapSideColors(frontSidePen, backSidePen, frontSideBrush, backSideBrush);
+        SwapBrickColors(frontSidePen, backSidePen, frontSideBrush, backSideBrush);
     }
 
     if (rotationStep == 4 || rotationStep == 12) //Steps for 90 degrees rotation without transformation (display bottom and top sides)
@@ -222,9 +251,9 @@ void DrawLetterBrick(HDC hdc, int x, int y, EBrickColor brickMainColor, EBrickLe
 // Draw all bricks on level
 void DrawLevel(HDC hdc)
 {
-    for (int i = 0; i < 14; ++i)
+    for (int i = 0; i < LevelHeightSize; ++i) //14 LevelHeight
     {
-        for (int j = 0; j < 12; ++j)
+        for (int j = 0; j < LevelWidthSize; ++j) //12 LevelWidth
         {
             DrawBrick(hdc, LevelOffset_X + j * CellWidth, LevelOffset_Y + i * CellHeight, LevelFirst[i][j]); //TO DO: Cast to ENUM or NOT? ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         }
@@ -234,41 +263,89 @@ void DrawLevel(HDC hdc)
 // Draw platform
 void DrawPlatform(HDC hdc, int x, int y)
 {
+    //At first draw a rectangle with platform size and background color before drawing platform itself to clear after redraw
+    SelectObject(hdc, BlackPen);
+    SelectObject(hdc, BlackBrush);
+
+    Rectangle(hdc, OldPlatformRect.left, OldPlatformRect.top, OldPlatformRect.right, OldPlatformRect.bottom);
+
+    //Cirlce platform side parts
     SelectObject(hdc, OrangePen);
     SelectObject(hdc, OrangeBrush);
 
-    //Cirlce platform side parts
     Ellipse(hdc, x * ResolutionScale, y * ResolutionScale, (x + CircleSize) * ResolutionScale, (y + CircleSize) * ResolutionScale); //Draw a ellipse in rectangle
     Ellipse(hdc, (x + SpaceBetweenCircles) * ResolutionScale, y * ResolutionScale, (x + SpaceBetweenCircles + CircleSize) * ResolutionScale, (y + CircleSize) * ResolutionScale);
 
+    //Rectangle platform part
     SelectObject(hdc, GreenPen);
     SelectObject(hdc, GreenBrush);
 
-    //Rectangle platform part
     RoundRect(hdc, (x + 4) * ResolutionScale, (y + 1) * ResolutionScale, (x + 4 + 20) * ResolutionScale, (y + 1 + 5) * ResolutionScale, 4 * ResolutionScale, 4 * ResolutionScale);
     
+    //Highlight from light
     SelectObject(hdc, GreyPen);
     SelectObject(hdc, GreyBrush);
 
-    //Highlight from light
     Rectangle(hdc, (x + 4 + 3) * ResolutionScale, (y + 1 + 2) * ResolutionScale, (x + 4) * ResolutionScale + 24, (y + 1) * ResolutionScale + 5);
     Rectangle(hdc, (x + 4 + 9) * ResolutionScale, (y + 1 + 2) * ResolutionScale, (x + 4) * ResolutionScale + 33, (y + 1) * ResolutionScale + 5);
     Rectangle(hdc, (x + 4 + 14) * ResolutionScale, (y + 1 + 2) * ResolutionScale, (x + 4) * ResolutionScale + 45, (y + 1) * ResolutionScale + 5);
     Rectangle(hdc, (x + 4 + 21) * ResolutionScale, (y + 1 + 1) * ResolutionScale, (x + 4) * ResolutionScale + 66, (y + 1) * ResolutionScale + 1);
     Rectangle(hdc, (x + 4 - 2) * ResolutionScale, (y + 1 + 1) * ResolutionScale, (x + 4) * ResolutionScale - 3, (y + 1) * ResolutionScale + 1);
     Rectangle(hdc, (x + 4 - 3) * ResolutionScale, (y + 1 + 1) * ResolutionScale, (x + 4) * ResolutionScale - 7, (y + 1) * ResolutionScale + 9);
-
-
 }
-// Draw every frame in game
-void DrawFrame(HDC hdc)
-{
-    //DrawLevel(hdc);
 
-    //DrawPlatform(hdc, 50, 100);
-    for (int i = 0; i < 16; ++i)
+// Draw every frame in game
+void DrawFrame(HDC hdc, RECT &paintarea)
+{
+    RECT intersectionRect;
+
+    if (IntersectRect(&intersectionRect, &paintarea, &LevelRect))
+    {
+        DrawLevel(hdc);
+    }
+    
+    if (IntersectRect(&intersectionRect, &paintarea, &PlatformRect))
+    {
+        DrawPlatform(hdc, LevelOffset_X + PlatformPos_X, PlatformPos_Y);
+    }
+
+    /*for (int i = 0; i < 16; ++i)
     {
         DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 100, EBrickColor::BLUE, EBrickLetter::Letter_O, i);
         DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 130, EBrickColor::PURPLE, EBrickLetter::Letter_O, i);
+    }*/
+}
+
+// Redraw platform in other position (moving)
+void ReDrawPlatform()
+{
+    OldPlatformRect = PlatformRect;
+
+    PlatformRect.left = (LevelOffset_X + PlatformPos_X) * ResolutionScale;
+    PlatformRect.top = PlatformPos_Y * ResolutionScale;
+    PlatformRect.right = PlatformRect.left + PlatformWidth * ResolutionScale;
+    PlatformRect.bottom = PlatformRect.top + PlatformHeight * ResolutionScale;
+    
+    InvalidateRect(HWnd, &OldPlatformRect, FALSE);
+    InvalidateRect(HWnd, &PlatformRect, FALSE);
+}
+
+int OnKeyDown(EKeyType keyType)
+{
+    switch (keyType)
+    {
+    case LeftArrowKey:
+        PlatformPos_X -= PlatformStep_X;
+        ReDrawPlatform();
+        break;
+
+    case RightArrowKey:
+        PlatformPos_X += PlatformStep_X;
+        ReDrawPlatform();
+        break;
+
+    case SpaceKey:
+        break;
     }
+    return 0;
 }
