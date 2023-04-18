@@ -22,26 +22,29 @@ HWND HWnd;
 HPEN PurplePen, BluePen, OrangePen, GreenPen, GreyPen, WhitePen, BlackPen, WhiteLetterPen;
 HBRUSH PurpleBrush, BlueBrush, OrangeBrush, GreenBrush, GreyBrush, WhiteBrush, BlackBrush;
 
-const unsigned int ResolutionScale = 3;
-const unsigned int BrickWidth = 15;
-const unsigned int BrickHeight = 7;
-const unsigned int CellWidth = 16; //BrickWidth + 1 pxl for gorizontal space between bricks
-const unsigned int CellHeight = 8; //Brickheight + 1 pxl for vertical space between bricks
-const unsigned int CircleSize = 7;
-const unsigned int BallSize = 4;
-const unsigned PlatformHeight = 7;
+const int ResolutionScale = 3;
+const int BrickWidth = 15;
+const int BrickHeight = 7;
+const int CellWidth = 16; //BrickWidth + 1 pxl for gorizontal space between bricks
+const int CellHeight = 8; //Brickheight + 1 pxl for vertical space between bricks
+const int CircleSize = 7;
+const int BallSize = 4;
+const int PlatformHeight = 7;
 
-const unsigned int LevelWidthSize = 12; //Width in Bricks
-const unsigned int LevelHeightSize = 14; //Height in Bricks
+const int LevelWidthSize = 12; //Width in Bricks
+const int LevelHeightSize = 14; //Height in Bricks
 
 const int LevelOffset_X = 8;
 const int LevelOffset_Y = 6;
 const int PlatformPos_Y = 185;
-const int MaxLevelPos_X = LevelOffset_X + CellWidth * LevelWidthSize - BallSize;
-const int MaxLevelPos_Y = 190 - BallSize;
+const int MaxLevelPos_X = 201;
+const int MaxLevelPos_Y = 200 - BallSize;
+
+const int BorderOffset_X = 6;
+const int BorderOffset_Y = 4;
 
 int PlatformWidth = 28;
-int PlatformPos_X = 0;
+int PlatformPos_X = (BorderOffset_X + MaxLevelPos_X - PlatformWidth) / 2;
 int PlatformStep_X = ResolutionScale;
 int SpaceBetweenCircles = 21;
 
@@ -57,7 +60,7 @@ RECT PlatformRect, OldPlatformRect;
 RECT LevelRect;
 RECT BallRect, OldBallRect;
 
-char LevelFirst[LevelHeightSize][LevelWidthSize]
+char Level_01[LevelHeightSize][LevelWidthSize]
 {
     0,0,0,0,0,0,0,0,0,0,0,0,
     1,1,1,1,1,1,1,1,1,1,1,1,
@@ -104,17 +107,17 @@ void InitGameEngine(HWND hWnd)
     WhiteLetterPen = CreatePen(PS_SOLID, ResolutionScale, RGB(255, 255, 255));
 
     //Initialize first platform position for background rectangle (for clear background after moving platform)
-    PlatformRect.left = (LevelOffset_X + PlatformPos_X) * ResolutionScale;
+    PlatformRect.left = PlatformPos_X * ResolutionScale;
     PlatformRect.top = PlatformPos_Y * ResolutionScale;
-    PlatformRect.right = (LevelOffset_X + PlatformPos_X + PlatformWidth) * ResolutionScale;
-    PlatformRect.bottom = (PlatformPos_Y + PlatformHeight) * ResolutionScale;
+    PlatformRect.right = PlatformRect.left + PlatformWidth * ResolutionScale;
+    PlatformRect.bottom = PlatformRect.top + PlatformHeight * ResolutionScale;
 
-    LevelRect.left = LevelOffset_X * ResolutionScale;
-    LevelRect.top = LevelOffset_Y * ResolutionScale;
+    LevelRect.left = BorderOffset_X * ResolutionScale;
+    LevelRect.top = BorderOffset_Y * ResolutionScale;
     LevelRect.right = LevelRect.left + CellWidth * LevelHeightSize * ResolutionScale;
     LevelRect.bottom = LevelRect.top + CellHeight * LevelWidthSize * ResolutionScale;
 
-    SetTimer(HWnd, TimerID, 25, 0);
+    SetTimer(HWnd, TimerID, 20, 0);
 }
 
 ////////////////MINE/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -156,6 +159,31 @@ void DrawBall(HDC hdc)
     Ellipse(hdc, BallRect.left, BallRect.top, BallRect.right - 1, BallRect.bottom - 1);
 }
 
+//Check new position for collision with level bricks and change direction and position consider reflection
+void CheckBallHitBrick(int &nextBallPos_Y)
+{
+    int brickPos_Y = LevelOffset_Y + LevelHeightSize * CellHeight;
+
+    for (int i = LevelHeightSize - 1; i >= 0; --i)
+    {
+        for (int j = LevelWidthSize - 1; j >= 0; --j)
+        {
+            if (Level_01[i][j] == 0)
+            {
+                continue;
+            }
+            if (nextBallPos_Y < brickPos_Y)
+            {
+                nextBallPos_Y = brickPos_Y - (nextBallPos_Y - brickPos_Y);
+                BallDirection = -BallDirection;
+            }
+        }
+
+        brickPos_Y -= CellHeight;
+    }
+
+}
+
 //Redraw ball in other position (moving)
 void ReDrawBall()
 {
@@ -167,37 +195,50 @@ void ReDrawBall()
     nextBallPos_X = BallPos_X + static_cast<int>(BallSpeed * cos(BallDirection));
     nextBallPos_Y = BallPos_Y - static_cast<int>(BallSpeed * sin(BallDirection));
 
-    //Check new position for collision with level frames and change direction and new position consider reflection
-    if (nextBallPos_X < 0)
+    //Check new position for collision with level border and change direction and new position consider reflection
+    //Left border reflection
+    if (nextBallPos_X < BorderOffset_X)
     {
-        nextBallPos_X = -nextBallPos_X;
+        nextBallPos_X = BorderOffset_X - (nextBallPos_X - BorderOffset_X);
         BallDirection = static_cast<float>(M_PI) - BallDirection;
     }
-
-    if (nextBallPos_Y < 0)
+    //Top border reflection
+    if (nextBallPos_Y < BorderOffset_Y)
     {
-        nextBallPos_Y = -nextBallPos_Y;
+        nextBallPos_Y = BorderOffset_Y - (nextBallPos_Y - BorderOffset_Y);
         BallDirection = - BallDirection;
     }
-
-    if (nextBallPos_X > MaxLevelPos_X)
+    //Right border reflection
+    if (nextBallPos_X > MaxLevelPos_X - BallSize)
     {
-        nextBallPos_X = MaxLevelPos_X - (nextBallPos_X - MaxLevelPos_X); //consider ball speed (MaxLevelPos_X + BallSpeed)
+        nextBallPos_X = MaxLevelPos_X - BallSize - (nextBallPos_X - (MaxLevelPos_X - BallSize)); //consider ball speed (MaxLevelPos_X + BallSpeed)
         BallDirection = static_cast<float>(M_PI) - BallDirection;
     }
-
-    if (nextBallPos_Y > MaxLevelPos_Y)
+    //Bottom border reflection
+    if (nextBallPos_Y > MaxLevelPos_Y - BallSize)
     {
-        nextBallPos_Y = MaxLevelPos_Y - (nextBallPos_Y - MaxLevelPos_Y);
+        nextBallPos_Y = MaxLevelPos_Y - BallSize - (nextBallPos_Y - (MaxLevelPos_Y - BallSize));
         BallDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - BallDirection;
     }
+
+    //Check new position for collision with platform
+    if (nextBallPos_Y > PlatformPos_Y - BallSize)
+    {
+        if (nextBallPos_X >= PlatformPos_X && nextBallPos_X <= PlatformPos_X + PlatformWidth)
+        {
+            nextBallPos_Y = PlatformPos_Y - BallSize - (nextBallPos_Y - (PlatformPos_Y - BallSize));
+            BallDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - BallDirection;
+        }
+    }
+
+    CheckBallHitBrick(nextBallPos_Y);
 
     //Set new ball position
     BallPos_X = nextBallPos_X;
     BallPos_Y = nextBallPos_Y;
 
-    BallRect.left = (LevelOffset_X + BallPos_X) * ResolutionScale;
-    BallRect.top = (LevelOffset_Y + BallPos_Y) * ResolutionScale;
+    BallRect.left = BallPos_X * ResolutionScale;
+    BallRect.top = BallPos_Y * ResolutionScale;
     BallRect.right = BallRect.left + BallSize * ResolutionScale;
     BallRect.bottom = BallRect.top + BallSize * ResolutionScale;
 
@@ -336,7 +377,7 @@ void DrawLevel(HDC hdc)
     {
         for (int j = 0; j < LevelWidthSize; ++j) //12 LevelWidth
         {
-            DrawBrick(hdc, LevelOffset_X + j * CellWidth, LevelOffset_Y + i * CellHeight, LevelFirst[i][j]); //TO DO: Cast to ENUM or NOT? ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            DrawBrick(hdc, LevelOffset_X + j * CellWidth, LevelOffset_Y + i * CellHeight, Level_01[i][j]); //TO DO: Cast to ENUM or NOT? ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         }
     }
 }
@@ -361,7 +402,7 @@ void DrawPlatform(HDC hdc, int x, int y)
     SelectObject(hdc, GreenPen);
     SelectObject(hdc, GreenBrush);
 
-    RoundRect(hdc, (x + 4) * ResolutionScale, (y + 1) * ResolutionScale, (x + 4 + 20) * ResolutionScale, (y + 1 + 5) * ResolutionScale, 4 * ResolutionScale, 4 * ResolutionScale);
+    RoundRect(hdc, (x + BallSize) * ResolutionScale, (y + 1) * ResolutionScale, (x + 4 + 20) * ResolutionScale, (y + 1 + 5) * ResolutionScale, 4 * ResolutionScale, 4 * ResolutionScale);
     
     //Highlight from light
     SelectObject(hdc, GreyPen);
@@ -380,13 +421,77 @@ void ReDrawPlatform()
 {
     OldPlatformRect = PlatformRect;
 
-    PlatformRect.left = (LevelOffset_X + PlatformPos_X) * ResolutionScale;
+    PlatformRect.left = PlatformPos_X * ResolutionScale;
     PlatformRect.top = PlatformPos_Y * ResolutionScale;
     PlatformRect.right = PlatformRect.left + PlatformWidth * ResolutionScale;
     PlatformRect.bottom = PlatformRect.top + PlatformHeight * ResolutionScale;
 
     InvalidateRect(HWnd, &OldPlatformRect, FALSE);
     InvalidateRect(HWnd, &PlatformRect, FALSE);
+}
+
+//Draw level border element (tile)
+void DrawVerticalBorderElement(HDC hdc, int x, int y)
+{
+    //Blue border line
+    SelectObject(hdc, BluePen);
+    SelectObject(hdc, BlueBrush);
+
+    Rectangle(hdc, (x + 1) * ResolutionScale, y * ResolutionScale, (x + 4) * ResolutionScale, (y + 4) * ResolutionScale);
+
+    //White border line
+    SelectObject(hdc, WhitePen);
+    SelectObject(hdc, WhiteBrush);
+
+    Rectangle(hdc, x * ResolutionScale, y * ResolutionScale, (x + 1) * ResolutionScale, (y + 4) * ResolutionScale);
+
+    //Holes in border line
+    SelectObject(hdc, BlackPen);
+    SelectObject(hdc, BlackBrush);
+
+    Rectangle(hdc, (x + 2) * ResolutionScale, (y + 1) * ResolutionScale, (x + 3) * ResolutionScale, (y + 2) * ResolutionScale);
+}
+
+void DrawHorizontalBorderElement(HDC hdc, int x, int y)
+{
+    SelectObject(hdc, BluePen);
+    SelectObject(hdc, BlueBrush);
+
+    Rectangle(hdc, x * ResolutionScale, (y + 1) * ResolutionScale, (x + 4) * ResolutionScale, (y + 4) * ResolutionScale);
+
+    //White border line
+    SelectObject(hdc, WhitePen);
+    SelectObject(hdc, WhiteBrush);
+
+    Rectangle(hdc, x * ResolutionScale, y * ResolutionScale, (x + 4) * ResolutionScale, (y + 1) * ResolutionScale);
+
+    //Holes in border line
+    SelectObject(hdc, BlackPen);
+    SelectObject(hdc, BlackBrush);
+
+    Rectangle(hdc, (x + 2) * ResolutionScale, (y + 2) * ResolutionScale, (x + 3) * ResolutionScale, (y + 3) * ResolutionScale);
+}
+
+
+void DrawBorder(HDC hdc)
+{
+    //Draw left level border
+    for (int i = 0; i < 50; ++i)
+    {
+        DrawVerticalBorderElement(hdc, 2, 1 + i * 4);
+    }
+
+    //Draw right level border
+    for (int i = 0; i < 50; ++i)
+    {
+        DrawVerticalBorderElement(hdc, 201, 1 + i * 4);
+    }
+
+    //Draw top level border
+    for (int i = 0; i < 50; ++i)
+    {
+        DrawHorizontalBorderElement(hdc, 3 + i * 4, 0);
+    }
 }
 
 // Draw every frame in game
@@ -401,7 +506,7 @@ void DrawFrame(HDC hdc, RECT &paintarea)
     
     if (IntersectRect(&intersectionRect, &paintarea, &PlatformRect))
     {
-        DrawPlatform(hdc, LevelOffset_X + PlatformPos_X, PlatformPos_Y);
+        DrawPlatform(hdc, PlatformPos_X, PlatformPos_Y);
     }
 
     /*for (int i = 0; i < 16; ++i)
@@ -414,6 +519,8 @@ void DrawFrame(HDC hdc, RECT &paintarea)
     {
         DrawBall(hdc);
     }
+
+    DrawBorder(hdc);
 }
 
 int OnKeyDown(EKeyType keyType)
@@ -422,11 +529,23 @@ int OnKeyDown(EKeyType keyType)
     {
     case LeftArrowKey:
         PlatformPos_X -= PlatformStep_X;
+
+        if (PlatformPos_X <= BorderOffset_X)
+        {
+            PlatformPos_X = BorderOffset_X;
+        }
+
         ReDrawPlatform();
         break;
 
     case RightArrowKey:
         PlatformPos_X += PlatformStep_X;
+
+        if (PlatformPos_X >= MaxLevelPos_X - PlatformWidth)
+        {
+            PlatformPos_X = MaxLevelPos_X - PlatformWidth;
+        }
+
         ReDrawPlatform();
         break;
 
