@@ -4,8 +4,6 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-
-
 enum EBrickColor
 {
     NONE,
