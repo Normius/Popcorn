@@ -7,6 +7,7 @@
 #define MAX_LOADSTRING 100
 
 // Global Variables:
+CGameEngine GameEngine;
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
@@ -118,7 +119,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
 
    //////////////////////////////////////////////////////////////////////////////////////////MINE///////////////////////////////////////////////////////////////////////
-   InitGameEngine(hWnd);
+   GameEngine.InitGameEngine(hWnd);
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -164,7 +165,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Add any drawing code that uses hdc here...
 
-            DrawFrame(hdc, ps.rcPaint);
+            GameEngine.DrawFrame(hdc, ps.rcPaint);
 
             EndPaint(hWnd, &ps);
         }
@@ -177,20 +178,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (wParam)
         {
         case VK_LEFT:
-            return OnKeyDown(LeftArrowKey);
+            return GameEngine.OnKeyDown(LeftArrowKey);
 
         case VK_RIGHT:
-            return OnKeyDown(RightArrowKey);
+            return GameEngine.OnKeyDown(RightArrowKey);
 
         case VK_SPACE:
-            return OnKeyDown(SpaceKey);
+            return GameEngine.OnKeyDown(SpaceKey);
         }
         break;
 
     case WM_TIMER:
         if (wParam == TimerID)
         {
-            return On_Timer();
+            return GameEngine.On_Timer();
         }
         break;
 

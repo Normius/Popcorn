@@ -1,66 +1,7 @@
 #include "GameEngine.h"
 
-#define _USE_MATH_DEFINES
-#include <cmath>
-
 ///////////////////MINE///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-enum EBrickLetter
-{
-    Letter_NONE,
-    Letter_O
-};
-
-enum EBrickColor
-{
-    NONE,
-    PURPLE,
-    BLUE
-};
-
-HWND HWnd;
-HPEN PurplePen, BluePen, OrangePen, GreenPen, GreyPen, WhitePen, BlackPen, WhiteLetterPen;
-HBRUSH PurpleBrush, BlueBrush, OrangeBrush, GreenBrush, GreyBrush, WhiteBrush, BlackBrush;
-
-const int ResolutionScale = 3;
-const int BrickWidth = 15;
-const int BrickHeight = 7;
-const int CellWidth = 16; //BrickWidth + 1 pxl for gorizontal space between bricks
-const int CellHeight = 8; //Brickheight + 1 pxl for vertical space between bricks
-const int CircleSize = 7;
-const int BallSize = 4;
-const int PlatformHeight = 7;
-
-const int LevelWidthSize = 12; //Width in Bricks
-const int LevelHeightSize = 14; //Height in Bricks
-
-const int LevelOffset_X = 8;
-const int LevelOffset_Y = 6;
-const int PlatformPos_Y = 185;
-const int MaxLevelPos_X = 201;
-const int MaxLevelPos_Y = 200 - BallSize;
-
-const int BorderOffset_X = 6;
-const int BorderOffset_Y = 4;
-
-int PlatformWidth = 28;
-int PlatformPos_X = (BorderOffset_X + MaxLevelPos_X - PlatformWidth) / 2;
-int PlatformStep_X = ResolutionScale;
-int SpaceBetweenCircles = 21;
-
-int BallPos_X = 20;
-int BallPos_Y = 170;
-int BallMove_X = 1;
-int BallMove_Y = 1;
-float BallSpeed = 3.0f;
-float BallDirection = static_cast<float>(M_PI - M_PI / 4);
-
-
-RECT PlatformRect, OldPlatformRect;
-RECT LevelRect;
-RECT BallRect, OldBallRect;
-
-char Level_01[LevelHeightSize][LevelWidthSize]
+char Level_01[CGameEngine::LevelHeightSize][CGameEngine::LevelWidthSize]
 {
     0,0,0,0,0,0,0,0,0,0,0,0,
     1,1,1,1,1,1,1,1,1,1,1,1,
@@ -79,14 +20,102 @@ char Level_01[LevelHeightSize][LevelWidthSize]
 };
 /////////////////////////////////////////////////////////////
 
-void CreatePenAndBrush(unsigned char r, unsigned char g, unsigned char b, HPEN &pen, HBRUSH &brush)
+CBall::CBall()
+    :BallPos_X(20), BallPos_Y(170), BallSpeed(3.0f), BallDirection(static_cast<float>(M_PI - M_PI / 4))
 {
-    pen = CreatePen(PS_SOLID, 0, RGB(r, g, b));
-    brush = CreateSolidBrush(RGB(r, g, b));
+};
+
+// Draw a ball
+void CBall::Draw(HDC hdc, RECT &paintArea, CGameEngine *gameEngine)
+{
+    RECT intersectionRect;
+
+    if (!IntersectRect(&intersectionRect, &paintArea, &BallRect))
+    {
+        return;
+    }
+    //At first draw a rectangle with platform size and background color before drawing platform itself to clear after redraw
+    SelectObject(hdc, gameEngine->BlackPen);
+    SelectObject(hdc, gameEngine->BlackBrush);
+
+    Ellipse(hdc, OldBallRect.left, OldBallRect.top, OldBallRect.right - 1, OldBallRect.bottom - 1);
+
+    //Draw a ball
+    SelectObject(hdc, gameEngine->WhitePen);
+    SelectObject(hdc, gameEngine->WhiteBrush);
+
+    Ellipse(hdc, BallRect.left, BallRect.top, BallRect.right - 1, BallRect.bottom - 1);
+}
+
+//Redraw ball in other position (moving)
+void CBall::Move(CGameEngine* gameEngine)
+{
+    int nextBallPos_X, nextBallPos_Y;
+
+    OldBallRect = BallRect;
+
+    //Calculate new ball direction and position
+    nextBallPos_X = BallPos_X + static_cast<int>(BallSpeed * cos(BallDirection));
+    nextBallPos_Y = BallPos_Y - static_cast<int>(BallSpeed * sin(BallDirection));
+
+    //Check new position for collision with level border and change direction and new position consider reflection
+    //Left border reflection
+    if (nextBallPos_X < CGameEngine::BorderOffset_X)
+    {
+        nextBallPos_X = CGameEngine::BorderOffset_X - (nextBallPos_X - CGameEngine::BorderOffset_X);
+        BallDirection = static_cast<float>(M_PI) - BallDirection;
+    }
+    //Top border reflection
+    if (nextBallPos_Y < CGameEngine::BorderOffset_Y)
+    {
+        nextBallPos_Y = CGameEngine::BorderOffset_Y - (nextBallPos_Y - CGameEngine::BorderOffset_Y);
+        BallDirection = -BallDirection;
+    }
+    //Right border reflection
+    if (nextBallPos_X > CGameEngine::MaxLevelPos_X - BallSize)
+    {
+        nextBallPos_X = CGameEngine::MaxLevelPos_X - BallSize - (nextBallPos_X - (CGameEngine::MaxLevelPos_X - BallSize)); //consider ball speed (MaxLevelPos_X + BallSpeed)
+        BallDirection = static_cast<float>(M_PI) - BallDirection;
+    }
+    //Bottom border reflection
+    if (nextBallPos_Y > CGameEngine::MaxLevelPos_Y - BallSize)
+    {
+        nextBallPos_Y = CGameEngine::MaxLevelPos_Y - BallSize - (nextBallPos_Y - (CGameEngine::MaxLevelPos_Y - BallSize));
+        BallDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - BallDirection;
+    }
+
+    //Check new position for collision with platform
+    if (nextBallPos_Y > gameEngine->PlatformPos_Y - BallSize)
+    {
+        if (nextBallPos_X >= gameEngine->PlatformPos_X && nextBallPos_X <= gameEngine->PlatformPos_X + gameEngine->PlatformWidth)
+        {
+            nextBallPos_Y = gameEngine->PlatformPos_Y - BallSize - (nextBallPos_Y - (gameEngine->PlatformPos_Y - BallSize));
+            BallDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - BallDirection;
+        }
+    }
+
+    gameEngine->CheckBallHitBrick(nextBallPos_Y);
+
+    //Set new ball position
+    BallPos_X = nextBallPos_X;
+    BallPos_Y = nextBallPos_Y;
+
+    BallRect.left = BallPos_X * CGameEngine::ResolutionScale;
+    BallRect.top = BallPos_Y * CGameEngine::ResolutionScale;
+    BallRect.right = BallRect.left + BallSize * CGameEngine::ResolutionScale;
+    BallRect.bottom = BallRect.top + BallSize * CGameEngine::ResolutionScale;
+
+    InvalidateRect(gameEngine->HWnd, &OldBallRect, FALSE);
+    InvalidateRect(gameEngine->HWnd, &BallRect, FALSE);
+}
+
+CGameEngine::CGameEngine()
+: PlatformWidth(28), PlatformPos_X( (BorderOffset_X + MaxLevelPos_X - PlatformWidth) / 2 ), PlatformStep_X(ResolutionScale), SpaceBetweenCircles(21)
+{
 }
 
 //Setup and initialize game resources on start
-void InitGameEngine(HWND hWnd)
+void CGameEngine::InitGameEngine(HWND hWnd)
 {
     //Initialize window handle by value from Main
     HWnd = hWnd;
@@ -120,9 +149,103 @@ void InitGameEngine(HWND hWnd)
     SetTimer(HWnd, TimerID, 20, 0);
 }
 
-////////////////MINE/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Draw every frame in game
+void CGameEngine::DrawFrame(HDC hdc, RECT& paintArea)
+{
+    RECT intersectionRect;
+
+    if (IntersectRect(&intersectionRect, &paintArea, &LevelRect))
+    {
+        DrawLevel(hdc);
+    }
+
+    if (IntersectRect(&intersectionRect, &paintArea, &PlatformRect))
+    {
+        DrawPlatform(hdc, PlatformPos_X, PlatformPos_Y);
+    }
+
+   /* for (int i = 0; i < 16; ++i)
+    {
+        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 100, EBrickColor::BLUE, EBrickLetter::Letter_O, i);
+        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 130, EBrickColor::PURPLE, EBrickLetter::Letter_O, i);
+    }*/
+    
+    Ball.Draw(hdc, paintArea, this);
+
+    DrawBorder(hdc);
+}
+
+int CGameEngine::OnKeyDown(EKeyType keyType)
+{
+    switch (keyType)
+    {
+    case LeftArrowKey:
+        PlatformPos_X -= PlatformStep_X;
+
+        if (PlatformPos_X <= BorderOffset_X)
+        {
+            PlatformPos_X = BorderOffset_X;
+        }
+
+        ReDrawPlatform();
+        break;
+
+    case RightArrowKey:
+        PlatformPos_X += PlatformStep_X;
+
+        if (PlatformPos_X >= MaxLevelPos_X - PlatformWidth)
+        {
+            PlatformPos_X = MaxLevelPos_X - PlatformWidth;
+        }
+
+        ReDrawPlatform();
+        break;
+
+    case SpaceKey:
+        break;
+    }
+    return 0;
+}
+
+int CGameEngine::On_Timer()
+{
+    Ball.Move(this);
+    return 0;
+}
+
+//Check new position for collision with level bricks and change direction and position consider reflection
+void CGameEngine::CheckBallHitBrick(int& nextBallPos_Y)
+{
+    int brickPos_Y = LevelOffset_Y + LevelHeightSize * CellHeight;
+
+    for (int i = LevelHeightSize - 1; i >= 0; --i)
+    {
+        for (int j = LevelWidthSize - 1; j >= 0; --j)
+        {
+            if (Level_01[i][j] == 0)
+            {
+                continue;
+            }
+            if (nextBallPos_Y < brickPos_Y)
+            {
+                nextBallPos_Y = brickPos_Y - (nextBallPos_Y - brickPos_Y);
+                Ball.BallDirection = -Ball.BallDirection;
+            }
+        }
+
+        brickPos_Y -= CellHeight;
+    }
+
+}
+
+void CGameEngine::CreatePenAndBrush(unsigned char r, unsigned char g, unsigned char b, HPEN& pen, HBRUSH& brush)
+{
+    pen = CreatePen(PS_SOLID, 0, RGB(r, g, b));
+    brush = CreateSolidBrush(RGB(r, g, b));
+}
+
 // Draw a brick
-void DrawBrick(HDC hdc, int x, int y, char brickColor) //TO DO: change char param to ENUM ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void CGameEngine::DrawBrick(HDC hdc, int x, int y, char brickColor) //TO DO: change char param to ENUM ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 {
     switch (brickColor)
     {
@@ -144,109 +267,7 @@ void DrawBrick(HDC hdc, int x, int y, char brickColor) //TO DO: change char para
     RoundRect(hdc, x * ResolutionScale, y * ResolutionScale, (x + BrickWidth) * ResolutionScale, (y + BrickHeight) * ResolutionScale, 2 * ResolutionScale, 2 * ResolutionScale);
 }
 
-void DrawBall(HDC hdc)
-{
-    //At first draw a rectangle with platform size and background color before drawing platform itself to clear after redraw
-    SelectObject(hdc, BlackPen);
-    SelectObject(hdc, BlackBrush);
-
-    Ellipse(hdc, OldBallRect.left, OldBallRect.top, OldBallRect.right - 1, OldBallRect.bottom - 1);
-
-    //Draw a ball
-    SelectObject(hdc, WhitePen);
-    SelectObject(hdc, WhiteBrush);
-
-    Ellipse(hdc, BallRect.left, BallRect.top, BallRect.right - 1, BallRect.bottom - 1);
-}
-
-//Check new position for collision with level bricks and change direction and position consider reflection
-void CheckBallHitBrick(int &nextBallPos_Y)
-{
-    int brickPos_Y = LevelOffset_Y + LevelHeightSize * CellHeight;
-
-    for (int i = LevelHeightSize - 1; i >= 0; --i)
-    {
-        for (int j = LevelWidthSize - 1; j >= 0; --j)
-        {
-            if (Level_01[i][j] == 0)
-            {
-                continue;
-            }
-            if (nextBallPos_Y < brickPos_Y)
-            {
-                nextBallPos_Y = brickPos_Y - (nextBallPos_Y - brickPos_Y);
-                BallDirection = -BallDirection;
-            }
-        }
-
-        brickPos_Y -= CellHeight;
-    }
-
-}
-
-//Redraw ball in other position (moving)
-void ReDrawBall()
-{
-    int nextBallPos_X, nextBallPos_Y;
-
-    OldBallRect = BallRect;
-
-    //Calculate new ball direction and position
-    nextBallPos_X = BallPos_X + static_cast<int>(BallSpeed * cos(BallDirection));
-    nextBallPos_Y = BallPos_Y - static_cast<int>(BallSpeed * sin(BallDirection));
-
-    //Check new position for collision with level border and change direction and new position consider reflection
-    //Left border reflection
-    if (nextBallPos_X < BorderOffset_X)
-    {
-        nextBallPos_X = BorderOffset_X - (nextBallPos_X - BorderOffset_X);
-        BallDirection = static_cast<float>(M_PI) - BallDirection;
-    }
-    //Top border reflection
-    if (nextBallPos_Y < BorderOffset_Y)
-    {
-        nextBallPos_Y = BorderOffset_Y - (nextBallPos_Y - BorderOffset_Y);
-        BallDirection = - BallDirection;
-    }
-    //Right border reflection
-    if (nextBallPos_X > MaxLevelPos_X - BallSize)
-    {
-        nextBallPos_X = MaxLevelPos_X - BallSize - (nextBallPos_X - (MaxLevelPos_X - BallSize)); //consider ball speed (MaxLevelPos_X + BallSpeed)
-        BallDirection = static_cast<float>(M_PI) - BallDirection;
-    }
-    //Bottom border reflection
-    if (nextBallPos_Y > MaxLevelPos_Y - BallSize)
-    {
-        nextBallPos_Y = MaxLevelPos_Y - BallSize - (nextBallPos_Y - (MaxLevelPos_Y - BallSize));
-        BallDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - BallDirection;
-    }
-
-    //Check new position for collision with platform
-    if (nextBallPos_Y > PlatformPos_Y - BallSize)
-    {
-        if (nextBallPos_X >= PlatformPos_X && nextBallPos_X <= PlatformPos_X + PlatformWidth)
-        {
-            nextBallPos_Y = PlatformPos_Y - BallSize - (nextBallPos_Y - (PlatformPos_Y - BallSize));
-            BallDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - BallDirection;
-        }
-    }
-
-    CheckBallHitBrick(nextBallPos_Y);
-
-    //Set new ball position
-    BallPos_X = nextBallPos_X;
-    BallPos_Y = nextBallPos_Y;
-
-    BallRect.left = BallPos_X * ResolutionScale;
-    BallRect.top = BallPos_Y * ResolutionScale;
-    BallRect.right = BallRect.left + BallSize * ResolutionScale;
-    BallRect.bottom = BallRect.top + BallSize * ResolutionScale;
-
-    InvalidateRect(HWnd, &OldBallRect, FALSE);
-    InvalidateRect(HWnd, &BallRect, FALSE);
-}
-
-void SwapBrickColors(HPEN& frontSidePen, HPEN& backSidePen, HBRUSH& frontSideBrush, HBRUSH& backSideBrush) //Swap frontside with backside colors
+void CGameEngine::SwapBrickColors(HPEN& frontSidePen, HPEN& backSidePen, HBRUSH& frontSideBrush, HBRUSH& backSideBrush) //Swap frontside with backside colors
 {
     HPEN tempPen = frontSidePen;
     HBRUSH tempBrush = frontSideBrush;
@@ -259,7 +280,7 @@ void SwapBrickColors(HPEN& frontSidePen, HPEN& backSidePen, HBRUSH& frontSideBru
 }
 
 // Draw a brick with letter
-void DrawLetterBrick(HDC hdc, int x, int y, EBrickColor brickMainColor, EBrickLetter brickLetter, int rotationStep)
+void CGameEngine::DrawLetterBrick(HDC hdc, int x, int y, EBrickColor brickMainColor, EBrickLetter brickLetter, int rotationStep)
 {
     float rotationAngle;
     float offset = 0.0f;
@@ -371,7 +392,7 @@ void DrawLetterBrick(HDC hdc, int x, int y, EBrickColor brickMainColor, EBrickLe
 }
 
 // Draw all bricks on level
-void DrawLevel(HDC hdc)
+void CGameEngine::DrawLevel(HDC hdc)
 {
     for (int i = 0; i < LevelHeightSize; ++i) //14 LevelHeight
     {
@@ -383,7 +404,7 @@ void DrawLevel(HDC hdc)
 }
 
 // Draw platform
-void DrawPlatform(HDC hdc, int x, int y)
+void CGameEngine::DrawPlatform(HDC hdc, int x, int y)
 {
     //At first draw a rectangle with platform size and background color before drawing platform itself to clear after redraw
     SelectObject(hdc, BlackPen);
@@ -402,7 +423,7 @@ void DrawPlatform(HDC hdc, int x, int y)
     SelectObject(hdc, GreenPen);
     SelectObject(hdc, GreenBrush);
 
-    RoundRect(hdc, (x + BallSize) * ResolutionScale, (y + 1) * ResolutionScale, (x + 4 + 20) * ResolutionScale, (y + 1 + 5) * ResolutionScale, 4 * ResolutionScale, 4 * ResolutionScale);
+    RoundRect(hdc, (x + CBall::BallSize) * ResolutionScale, (y + 1) * ResolutionScale, (x + 4 + 20) * ResolutionScale, (y + 1 + 5) * ResolutionScale, 4 * ResolutionScale, 4 * ResolutionScale);
     
     //Highlight from light
     SelectObject(hdc, GreyPen);
@@ -417,7 +438,7 @@ void DrawPlatform(HDC hdc, int x, int y)
 }
 
 // Redraw platform in other position (moving)
-void ReDrawPlatform()
+void CGameEngine::ReDrawPlatform()
 {
     OldPlatformRect = PlatformRect;
 
@@ -431,7 +452,7 @@ void ReDrawPlatform()
 }
 
 //Draw level border element (tile)
-void DrawVerticalBorderElement(HDC hdc, int x, int y)
+void CGameEngine::DrawVerticalBorderElement(HDC hdc, int x, int y)
 {
     //Blue border line
     SelectObject(hdc, BluePen);
@@ -452,7 +473,7 @@ void DrawVerticalBorderElement(HDC hdc, int x, int y)
     Rectangle(hdc, (x + 2) * ResolutionScale, (y + 1) * ResolutionScale, (x + 3) * ResolutionScale, (y + 2) * ResolutionScale);
 }
 
-void DrawHorizontalBorderElement(HDC hdc, int x, int y)
+void CGameEngine::DrawHorizontalBorderElement(HDC hdc, int x, int y)
 {
     SelectObject(hdc, BluePen);
     SelectObject(hdc, BlueBrush);
@@ -472,8 +493,7 @@ void DrawHorizontalBorderElement(HDC hdc, int x, int y)
     Rectangle(hdc, (x + 2) * ResolutionScale, (y + 2) * ResolutionScale, (x + 3) * ResolutionScale, (y + 3) * ResolutionScale);
 }
 
-
-void DrawBorder(HDC hdc)
+void CGameEngine::DrawBorder(HDC hdc)
 {
     //Draw left level border
     for (int i = 0; i < 50; ++i)
@@ -492,71 +512,4 @@ void DrawBorder(HDC hdc)
     {
         DrawHorizontalBorderElement(hdc, 3 + i * 4, 0);
     }
-}
-
-// Draw every frame in game
-void DrawFrame(HDC hdc, RECT &paintarea)
-{
-    RECT intersectionRect;
-
-    if (IntersectRect(&intersectionRect, &paintarea, &LevelRect))
-    {
-        DrawLevel(hdc);
-    }
-    
-    if (IntersectRect(&intersectionRect, &paintarea, &PlatformRect))
-    {
-        DrawPlatform(hdc, PlatformPos_X, PlatformPos_Y);
-    }
-
-    /*for (int i = 0; i < 16; ++i)
-    {
-        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 100, EBrickColor::BLUE, EBrickLetter::Letter_O, i);
-        DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 130, EBrickColor::PURPLE, EBrickLetter::Letter_O, i);
-    }*/
-
-    if (IntersectRect(&intersectionRect, &paintarea, &BallRect))
-    {
-        DrawBall(hdc);
-    }
-
-    DrawBorder(hdc);
-}
-
-int OnKeyDown(EKeyType keyType)
-{
-    switch (keyType)
-    {
-    case LeftArrowKey:
-        PlatformPos_X -= PlatformStep_X;
-
-        if (PlatformPos_X <= BorderOffset_X)
-        {
-            PlatformPos_X = BorderOffset_X;
-        }
-
-        ReDrawPlatform();
-        break;
-
-    case RightArrowKey:
-        PlatformPos_X += PlatformStep_X;
-
-        if (PlatformPos_X >= MaxLevelPos_X - PlatformWidth)
-        {
-            PlatformPos_X = MaxLevelPos_X - PlatformWidth;
-        }
-
-        ReDrawPlatform();
-        break;
-
-    case SpaceKey:
-        break;
-    }
-    return 0;
-}
-
-int On_Timer()
-{
-    ReDrawBall();
-    return 0;
 }
