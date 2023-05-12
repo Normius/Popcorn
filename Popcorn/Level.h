@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Config.h"
+#include "ActiveBrick.h"
 
 enum EBrickColor
 {
@@ -23,8 +24,10 @@ public:
     CLevel();
 
     void Init();
-    void Draw(HDC hdc, RECT& paintArea);
+    void Draw(HWND hwnd, HDC hdc, RECT& paintArea);
     void CheckBallHitBrick(int& nextBallPos_Y, float& ballDirection);
+
+    CActiveBrick ActiveBrick;
 
 private:
     void DrawBrick(HDC hdc, int x, int y, char brickColor);
@@ -34,9 +37,7 @@ private:
     HPEN brickPurplePen, brickBluePen, brickWhiteLetterPen;
     HBRUSH brickPurpleBrush, brickBlueBrush;
     RECT LevelRect;
+    
 
     static char Level_01[CConfig::LevelHeightSize][CConfig::LevelWidthSize];
-
-    static const int BrickWidth = 15;
-    static const int BrickHeight = 7;
 };

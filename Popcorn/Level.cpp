@@ -42,7 +42,7 @@ void CLevel::Init()
 }
 
 // Draw all bricks on level
-void CLevel::Draw(HDC hdc, RECT& paintArea)
+void CLevel::Draw(HWND hwnd, HDC hdc, RECT& paintArea)
 {
     RECT intersectionRect;
 
@@ -59,7 +59,7 @@ void CLevel::Draw(HDC hdc, RECT& paintArea)
         }
     }
 
-
+    ActiveBrick.Draw(hdc, paintArea);
 }
 
 //Check new position for collision with level bricks and change direction and position consider reflection
@@ -107,7 +107,7 @@ void CLevel::DrawBrick(HDC hdc, int x, int y, char brickColor) //TO DO: change c
     default: //Nothing, empty
         return;
     }
-    RoundRect(hdc, x * CConfig::ResolutionScale, y * CConfig::ResolutionScale, (x + BrickWidth) * CConfig::ResolutionScale, (y + BrickHeight) * CConfig::ResolutionScale, 2 * CConfig::ResolutionScale, 2 * CConfig::ResolutionScale);
+    RoundRect(hdc, x * CConfig::ResolutionScale, y * CConfig::ResolutionScale, (x + CConfig::BrickWidth) * CConfig::ResolutionScale, (y + CConfig::BrickHeight) * CConfig::ResolutionScale, 2 * CConfig::ResolutionScale, 2 * CConfig::ResolutionScale);
 }
 
 // Swap 2 colors (one brick side with other)
@@ -129,7 +129,7 @@ void CLevel::DrawLetterBrick(HDC hdc, int x, int y, EBrickColor brickMainColor, 
     float rotationAngle;
     float offset = 0.0f;
 
-    int brickMiddleAxis_Y = BrickHeight * CConfig::ResolutionScale / 2; //brick Rotation Axis
+    int brickMiddleAxis_Y = CConfig::BrickHeight * CConfig::ResolutionScale / 2; //brick Rotation Axis
     int backSideBrickOffset = 0;
 
     XFORM xForm, oldXForm;
@@ -177,13 +177,13 @@ void CLevel::DrawLetterBrick(HDC hdc, int x, int y, EBrickColor brickMainColor, 
         SelectObject(hdc, frontSidePen);
         SelectObject(hdc, frontSideBrush);
 
-        Rectangle(hdc, x, y + brickMiddleAxis_Y - CConfig::ResolutionScale, x + BrickWidth * CConfig::ResolutionScale, y + brickMiddleAxis_Y);
+        Rectangle(hdc, x, y + brickMiddleAxis_Y - CConfig::ResolutionScale, x + CConfig::BrickWidth * CConfig::ResolutionScale, y + brickMiddleAxis_Y);
 
         //Display backside
         SelectObject(hdc, backSidePen);
         SelectObject(hdc, backSideBrush);
 
-        Rectangle(hdc, x, y + brickMiddleAxis_Y, x + BrickWidth * CConfig::ResolutionScale, y + brickMiddleAxis_Y + CConfig::ResolutionScale - 1);
+        Rectangle(hdc, x, y + brickMiddleAxis_Y, x + CConfig::BrickWidth * CConfig::ResolutionScale, y + brickMiddleAxis_Y + CConfig::ResolutionScale - 1);
     }
     else
     {
@@ -207,13 +207,13 @@ void CLevel::DrawLetterBrick(HDC hdc, int x, int y, EBrickColor brickMainColor, 
         SelectObject(hdc, frontSidePen);
         SelectObject(hdc, frontSideBrush);
 
-        Rectangle(hdc, 0, -brickMiddleAxis_Y - backSideBrickOffset, BrickWidth * CConfig::ResolutionScale, brickMiddleAxis_Y - backSideBrickOffset);
+        Rectangle(hdc, 0, -brickMiddleAxis_Y - backSideBrickOffset, CConfig::BrickWidth * CConfig::ResolutionScale, brickMiddleAxis_Y - backSideBrickOffset);
 
         //Display backside
         SelectObject(hdc, backSidePen);
         SelectObject(hdc, backSideBrush);
 
-        Rectangle(hdc, 0, -brickMiddleAxis_Y, BrickWidth * CConfig::ResolutionScale, brickMiddleAxis_Y);
+        Rectangle(hdc, 0, -brickMiddleAxis_Y, CConfig::BrickWidth * CConfig::ResolutionScale, brickMiddleAxis_Y);
 
         if (rotationStep > 4 && rotationStep < 13)
         {

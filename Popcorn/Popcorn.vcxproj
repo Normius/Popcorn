@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ActiveBrick.h" />
     <ClInclude Include="Ball.h" />
     <ClInclude Include="Border.h" />
     <ClInclude Include="Config.h" />
@@ -139,6 +140,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ActiveBrick.cpp" />
     <ClCompile Include="Ball.cpp" />
     <ClCompile Include="Border.cpp" />
     <ClCompile Include="Config.cpp" />

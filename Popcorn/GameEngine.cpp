@@ -22,13 +22,13 @@ void CGameEngine::InitGameEngine(HWND hWnd)
     Border.Init();
 
     //Windows timer function
-    SetTimer(HWnd, TimerID, 20, 0);
+    SetTimer(HWnd, TimerID, 1000 / CConfig::FPS, 0);
 }
 
 // Draw every frame in game
 void CGameEngine::DrawFrame(HDC hdc, RECT& paintArea)
 {
-    Level.Draw(hdc, paintArea);
+    Level.Draw(HWnd, hdc, paintArea);
     Platform.Draw(hdc, paintArea, bgBlackPen, bgBlackBrush);
 
    /* for (int i = 0; i < 16; ++i)
@@ -78,5 +78,8 @@ int CGameEngine::OnKeyDown(EKeyType keyType)
 int CGameEngine::On_Timer()
 {
     Ball.Move(HWnd, &Level, Platform.Pos_X, Platform.Width);
+
+    Level.ActiveBrick.Act(HWnd);
+
     return 0;
 }
