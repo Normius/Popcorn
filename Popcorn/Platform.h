@@ -10,7 +10,7 @@ public:
     CPlatform();
 
     void Init();
-    void Draw(HDC hdc, RECT& paintArea, HPEN bgBlackPen, HBRUSH bgBlackBrush);
+    void Draw(HDC hdc, RECT& paintArea);
     void ReDraw(HWND hWnd);
 
     int Width;

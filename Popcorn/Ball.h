@@ -12,7 +12,7 @@ public:
 
     void Init();
 
-    void Draw(HDC hdc, RECT& painArea, HPEN bgBlackPen, HBRUSH bgBlackBrush);
+    void Draw(HDC hdc, RECT& painArea);
     void Move(HWND hWnd, CLevel* level, int platformPos_X, int platformWidth);
 
 private:

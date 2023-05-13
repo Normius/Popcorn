@@ -4,7 +4,7 @@
 // class CGameEngine
 //ctor
 CGameEngine::CGameEngine()
-    :HWnd(0), bgBlackPen(0), bgBlackBrush(0)
+    :HWnd(0)
 {
 }
 
@@ -14,7 +14,7 @@ void CGameEngine::InitGameEngine(HWND hWnd)
     //Initialize window handle by value from Main
     HWnd = hWnd;
 
-    CConfig::CreatePenAndBrush(0, 0, 0, bgBlackPen, bgBlackBrush);
+    CActiveBrick::SetupFadingBrickColors();
 
     Level.Init();
     Ball.Init();
@@ -29,7 +29,7 @@ void CGameEngine::InitGameEngine(HWND hWnd)
 void CGameEngine::DrawFrame(HDC hdc, RECT& paintArea)
 {
     Level.Draw(HWnd, hdc, paintArea);
-    Platform.Draw(hdc, paintArea, bgBlackPen, bgBlackBrush);
+    Platform.Draw(hdc, paintArea);
 
    /* for (int i = 0; i < 16; ++i)
     {
@@ -37,9 +37,9 @@ void CGameEngine::DrawFrame(HDC hdc, RECT& paintArea)
         DrawLetterBrick(hdc, 20 + i * CellWidth * ResolutionScale, 130, EBrickColor::PURPLE, EBrickLetter::Letter_O, i);
     }*/
     
-    Ball.Draw(hdc, paintArea, bgBlackPen, bgBlackBrush);
+    Ball.Draw(hdc, paintArea);
 
-    Border.Draw(hdc, paintArea, bgBlackPen, bgBlackBrush);
+    Border.Draw(hdc, paintArea);
 }
 
 //Handles keybord's keys
@@ -77,9 +77,9 @@ int CGameEngine::OnKeyDown(EKeyType keyType)
 
 int CGameEngine::On_Timer()
 {
-    Ball.Move(HWnd, &Level, Platform.Pos_X, Platform.Width);
+    Ball.Move(HWnd, &Level, Platform.Pos_X, Platform.Width); //Bind ball moving to the timer 
 
-    Level.ActiveBrick.Act(HWnd);
+    Level.ActiveBrick.Act(HWnd); //Bind active brick fading to the timer 
 
     return 0;
 }

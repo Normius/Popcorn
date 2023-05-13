@@ -29,8 +29,6 @@ public:
 
 private:
     HWND HWnd;
-    HPEN bgBlackPen;
-    HBRUSH bgBlackBrush;
 
     CBall Ball;
     CLevel Level;

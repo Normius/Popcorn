@@ -4,12 +4,25 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+class CColor
+{
+public:
+    CColor() = default;
+    CColor(unsigned char r, unsigned char g, unsigned char b);
+    unsigned char R, G, B;
+};
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // class CConfig
 class CConfig
 {
 public:
+    static void CreatePenAndBrush(const CColor& color, HPEN& pen, HBRUSH& brush);
     static void CreatePenAndBrush(unsigned char r, unsigned char g, unsigned char b, HPEN& pen, HBRUSH& brush);
+
+    static const CColor backgroundColor, brickPurpleColor, brickBlueColor;
+    static HPEN backgroundPen;
+    static HBRUSH backgroundBrush;
 
     static const int PlatformPos_Y = 185;
     static const int ResolutionScale = 3;

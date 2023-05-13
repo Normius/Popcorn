@@ -15,7 +15,7 @@ void CBall::Init()
 }
 
 // Draw a ball
-void CBall::Draw(HDC hdc, RECT& paintArea, HPEN bgBlackPen, HBRUSH bgBlackBrush)
+void CBall::Draw(HDC hdc, RECT& paintArea)
 {
     RECT intersectionRect;
 
@@ -25,8 +25,8 @@ void CBall::Draw(HDC hdc, RECT& paintArea, HPEN bgBlackPen, HBRUSH bgBlackBrush)
         return;
     }
     //At first draw a rectangle with platform size and background color before drawing platform itself to clear after redraw
-    SelectObject(hdc, bgBlackPen);
-    SelectObject(hdc, bgBlackBrush);
+    SelectObject(hdc, CConfig::backgroundPen);
+    SelectObject(hdc, CConfig::backgroundBrush);
 
     Ellipse(hdc, OldBallRect.left, OldBallRect.top, OldBallRect.right - 1, OldBallRect.bottom - 1);
 

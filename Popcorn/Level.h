@@ -3,13 +3,6 @@
 #include "Config.h"
 #include "ActiveBrick.h"
 
-enum EBrickColor
-{
-    NONE,
-    PURPLE,
-    BLUE
-};
-
 enum EBrickLetter
 {
     Letter_NONE,

@@ -22,16 +22,16 @@ char CLevel::Level_01[CConfig::LevelHeightSize][CConfig::LevelWidthSize]
 // class CLevel
 //Ctor
 CLevel::CLevel()
-    :brickPurplePen(0), brickBluePen(0), brickWhiteLetterPen(0), brickPurpleBrush(0), brickBlueBrush(0), LevelRect{}
+    :ActiveBrick(BLUE), brickPurplePen(0), brickBluePen(0), brickWhiteLetterPen(0), brickPurpleBrush(0), brickBlueBrush(0), LevelRect{}
 {
 }
 
-//StartInit for ball
+//StartInit for Level
 void CLevel::Init()
 {
-    CConfig::CreatePenAndBrush(255, 85, 255, brickPurplePen, brickPurpleBrush);
+    CConfig::CreatePenAndBrush(CConfig::brickPurpleColor, brickPurplePen, brickPurpleBrush);
 
-    CConfig::CreatePenAndBrush(85, 255, 255, brickBluePen, brickBlueBrush);
+    CConfig::CreatePenAndBrush(CConfig::brickBlueColor, brickBluePen, brickBlueBrush);
 
     brickWhiteLetterPen = CreatePen(PS_SOLID, CConfig::ResolutionScale, RGB(255, 255, 255));
 

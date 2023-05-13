@@ -27,7 +27,7 @@ void CPlatform::Init()
 }
 
 // Draw platform
-void CPlatform::Draw(HDC hdc, RECT& paintArea, HPEN bgBlackPen, HBRUSH bgBlackBrush)
+void CPlatform::Draw(HDC hdc, RECT& paintArea)
 {
     int x = Pos_X;
     int y = CConfig::PlatformPos_Y;
@@ -38,8 +38,8 @@ void CPlatform::Draw(HDC hdc, RECT& paintArea, HPEN bgBlackPen, HBRUSH bgBlackBr
         return;
     }
     //At first draw a rectangle with platform size and background color before drawing platform itself to clear after redraw
-    SelectObject(hdc, bgBlackPen);
-    SelectObject(hdc, bgBlackBrush);
+    SelectObject(hdc, CConfig::backgroundPen);
+    SelectObject(hdc, CConfig::backgroundBrush);
 
     Rectangle(hdc, OldPlatformRect.left, OldPlatformRect.top, OldPlatformRect.right, OldPlatformRect.bottom);
 
