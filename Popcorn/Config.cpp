@@ -9,6 +9,7 @@ CColor::CColor(unsigned char r, unsigned char g, unsigned char b)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // class CConfig
+int CConfig::TimerCounter = 0;
 
 const CColor CConfig::backgroundColor(0, 0, 0);
 const CColor CConfig::brickPurpleColor(255, 85, 255);
@@ -28,4 +29,10 @@ void CConfig::CreatePenAndBrush(unsigned char r, unsigned char g, unsigned char 
 {
     pen = CreatePen(PS_SOLID, 0, RGB(r, g, b));
     brush = CreateSolidBrush(RGB(r, g, b));
+}
+
+//Generates pseudorandom number in range: [0,..., range -1]
+int CConfig::Rand(int range)
+{
+    return rand() * range / RAND_MAX;
 }

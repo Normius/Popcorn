@@ -16,10 +16,10 @@ public:
     void Move(HWND hWnd, CLevel* level, int platformPos_X, int platformWidth);
 
 private:
-    int BallPos_X;
-    int BallPos_Y;
-    float BallSpeed;
-    float BallDirection;
+    int ballPos_X;
+    int ballPos_Y;
+    float ballSpeed;
+    float ballDirection;
 
     HPEN ballWhitePen;
     HBRUSH ballWhiteBrush;

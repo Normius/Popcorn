@@ -4,7 +4,7 @@
 // class CBall
 //Ctor
 CBall::CBall()
-    :BallPos_X(20), BallPos_Y(170), BallSpeed(3.0f), BallDirection(static_cast<float>(M_PI - M_PI / 4)), ballWhitePen(0), ballWhiteBrush(0), BallRect{}, OldBallRect{}
+    :ballPos_X(20), ballPos_Y(170), ballSpeed(3.0f), ballDirection(static_cast<float>(M_PI - M_PI / 4)), ballWhitePen(0), ballWhiteBrush(0), BallRect{}, OldBallRect{}
 {
 }
 
@@ -45,33 +45,33 @@ void CBall::Move(HWND hWnd, CLevel* level, int platformPos_X,  int platformWidth
     OldBallRect = BallRect;
 
     //Calculate new ball direction and position
-    nextBallPos_X = BallPos_X + static_cast<int>(BallSpeed * cos(BallDirection));
-    nextBallPos_Y = BallPos_Y - static_cast<int>(BallSpeed * sin(BallDirection));
+    nextBallPos_X = ballPos_X + static_cast<int>(ballSpeed * cos(ballDirection));
+    nextBallPos_Y = ballPos_Y - static_cast<int>(ballSpeed * sin(ballDirection));
 
     //Check new position for collision with level border and change direction and new position consider reflection
     //Left border reflection
     if (nextBallPos_X < CConfig::BorderOffset_X)
     {
         nextBallPos_X = CConfig::BorderOffset_X - (nextBallPos_X - CConfig::BorderOffset_X);
-        BallDirection = static_cast<float>(M_PI) - BallDirection;
+        ballDirection = static_cast<float>(M_PI) - ballDirection;
     }
     //Top border reflection
     if (nextBallPos_Y < CConfig::BorderOffset_Y)
     {
         nextBallPos_Y = CConfig::BorderOffset_Y - (nextBallPos_Y - CConfig::BorderOffset_Y);
-        BallDirection = -BallDirection;
+        ballDirection = -ballDirection;
     }
     //Right border reflection
     if (nextBallPos_X > CConfig::MaxLevelPos_X - CConfig::BallSize)
     {
         nextBallPos_X = CConfig::MaxLevelPos_X - CConfig::BallSize - (nextBallPos_X - (CConfig::MaxLevelPos_X - CConfig::BallSize)); //consider ball speed (MaxLevelPos_X + BallSpeed)
-        BallDirection = static_cast<float>(M_PI) - BallDirection;
+        ballDirection = static_cast<float>(M_PI) - ballDirection;
     }
     //Bottom border reflection
     if (nextBallPos_Y > CConfig::MaxLevelPos_Y - CConfig::BallSize)
     {
         nextBallPos_Y = CConfig::MaxLevelPos_Y - CConfig::BallSize - (nextBallPos_Y - (CConfig::MaxLevelPos_Y - CConfig::BallSize));
-        BallDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - BallDirection;
+        ballDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - ballDirection;
     }
 
     //Check new position for collision with platform
@@ -80,18 +80,18 @@ void CBall::Move(HWND hWnd, CLevel* level, int platformPos_X,  int platformWidth
         if (nextBallPos_X >= platformPos_X && nextBallPos_X <= platformPos_X + platformWidth)
         {
             nextBallPos_Y = CConfig::PlatformPos_Y - CConfig::BallSize - (nextBallPos_Y - (CConfig::PlatformPos_Y - CConfig::BallSize));
-            BallDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - BallDirection;
+            ballDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - ballDirection;
         }
     }
 
-    level->CheckBallHitBrick(nextBallPos_Y, BallDirection);
+    level->CheckBallHitBrick(nextBallPos_Y, ballDirection);
 
     //Set new ball position
-    BallPos_X = nextBallPos_X;
-    BallPos_Y = nextBallPos_Y;
+    ballPos_X = nextBallPos_X;
+    ballPos_Y = nextBallPos_Y;
 
-    BallRect.left = BallPos_X * CConfig::ResolutionScale;
-    BallRect.top = BallPos_Y * CConfig::ResolutionScale;
+    BallRect.left = ballPos_X * CConfig::ResolutionScale;
+    BallRect.top = ballPos_Y * CConfig::ResolutionScale;
     BallRect.right = BallRect.left + CConfig::BallSize * CConfig::ResolutionScale;
     BallRect.bottom = BallRect.top + CConfig::BallSize * CConfig::ResolutionScale;
 

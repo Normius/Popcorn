@@ -19,7 +19,9 @@ class CConfig
 public:
     static void CreatePenAndBrush(const CColor& color, HPEN& pen, HBRUSH& brush);
     static void CreatePenAndBrush(unsigned char r, unsigned char g, unsigned char b, HPEN& pen, HBRUSH& brush);
+    static int Rand(int range);
 
+    static int TimerCounter;
     static const CColor backgroundColor, brickPurpleColor, brickBlueColor;
     static HPEN backgroundPen;
     static HBRUSH backgroundBrush;
@@ -36,7 +38,7 @@ public:
     static const int LevelOffset_Y = 6;
     static const int BallSize = 4;
     static const int MaxLevelPos_X = LevelOffset_X + CellWidth * LevelWidthSize;
-    static const int MaxLevelPos_Y = 199 - BallSize;
+    static const int MaxLevelPos_Y = 199;
     static const int FPS = 20;
     static const int BrickWidth = 15;
     static const int BrickHeight = 7;

@@ -48,22 +48,22 @@ int CGameEngine::OnKeyDown(EKeyType keyType)
     switch (keyType)
     {
     case LeftArrowKey:
-        Platform.Pos_X -= Platform.Step_X;
+        Platform.pos_X -= Platform.step_X;
 
-        if (Platform.Pos_X <= CConfig::BorderOffset_X)
+        if (Platform.pos_X <= CConfig::BorderOffset_X)
         {
-            Platform.Pos_X = CConfig::BorderOffset_X;
+            Platform.pos_X = CConfig::BorderOffset_X;
         }
 
         Platform.ReDraw(HWnd);
         break;
 
     case RightArrowKey:
-        Platform.Pos_X += Platform.Step_X;
+        Platform.pos_X += Platform.step_X;
 
-        if (Platform.Pos_X >= CConfig::MaxLevelPos_X - Platform.Width + 1)
+        if (Platform.pos_X >= CConfig::MaxLevelPos_X - Platform.width + 1)
         {
-            Platform.Pos_X = CConfig::MaxLevelPos_X - Platform.Width + 1;
+            Platform.pos_X = CConfig::MaxLevelPos_X - Platform.width + 1;
         }
 
         Platform.ReDraw(HWnd);
@@ -77,9 +77,13 @@ int CGameEngine::OnKeyDown(EKeyType keyType)
 
 int CGameEngine::On_Timer()
 {
-    Ball.Move(HWnd, &Level, Platform.Pos_X, Platform.Width); //Bind ball moving to the timer 
+    ++CConfig::TimerCounter;
 
-    Level.ActiveBrick.Act(HWnd); //Bind active brick fading to the timer 
+    Ball.Move(HWnd, &Level, Platform.pos_X, Platform.width); //Bind ball moving to the timer 
+
+    Level.ActiveBrick.Act(HWnd); //Bind active brick fading to the timer
+
+    Platform.Act(HWnd);
 
     return 0;
 }

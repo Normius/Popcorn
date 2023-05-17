@@ -4,9 +4,10 @@
 // class CPlatform
 //Ctor
 CPlatform::CPlatform()
-    :Width(28), Pos_X((CConfig::BorderOffset_X + CConfig::MaxLevelPos_X - Width) / 2), Step_X(CConfig::ResolutionScale), SpaceBetweenCircles(21), PlatformRect{},
+    :width(NormalWidth), pos_X(CConfig::BorderOffset_X), step_X(CConfig::ResolutionScale), PlatformState(EPlatformState::Normal), spaceBetweenCircles(21), PlatformRect{},
     OldPlatformRect{}, platformOrangePen(0), platformGreenPen(0), platformGreyPen(0), platformOrangeBrush(0), platformGreenBrush(0), platformGreyBrush(0)
 {
+    pos_X = (CConfig::MaxLevelPos_X - width) / 2;
 }
 
 //Start init
@@ -19,17 +20,76 @@ void CPlatform::Init()
     CConfig::CreatePenAndBrush(225, 225, 225, platformGreyPen, platformGreyBrush);
 
     //Initialize first platform position for background rectangle (for clear background after moving platform)
-    PlatformRect.left = Pos_X * CConfig::ResolutionScale;
+    PlatformRect.left = pos_X * CConfig::ResolutionScale;
     PlatformRect.top = CConfig::PlatformPos_Y * CConfig::ResolutionScale;
-    PlatformRect.right = PlatformRect.left + Width * CConfig::ResolutionScale;
+    PlatformRect.right = PlatformRect.left + width * CConfig::ResolutionScale;
     PlatformRect.bottom = PlatformRect.top + Height * CConfig::ResolutionScale;
 
+}
+
+// Redraw platform on timer when it is meltdown
+void CPlatform::Act(HWND hWnd)
+{
+    if (PlatformState != EPlatformState::Meltdown)
+    {
+        PlatformState = EPlatformState::Meltdown;
+
+        int size = sizeof(meltingPlatformPos_Y) / sizeof(meltingPlatformPos_Y[0]);
+
+        for (int i =0; i < size; ++i)
+        { 
+            meltingPlatformPos_Y[i] = PlatformRect.bottom;
+        }
+    }
+
+    if (PlatformState == EPlatformState::Meltdown)
+    {
+        ReDraw(hWnd);
+    }
 }
 
 // Draw platform
 void CPlatform::Draw(HDC hdc, RECT& paintArea)
 {
-    int x = Pos_X;
+    switch (PlatformState)
+    {
+    case Normal:
+        DrawNormalState(hdc, paintArea);
+        break;
+
+    case Meltdown:
+        DrawMeltingState(hdc, paintArea);
+        break;
+
+    case Missing:
+        break;
+    default:
+        break;
+    }
+}
+
+// Redraw platform in other position (moving)
+void CPlatform::ReDraw(HWND hWnd)
+{
+    OldPlatformRect = PlatformRect;
+
+    PlatformRect.left = pos_X * CConfig::ResolutionScale;
+    PlatformRect.top = CConfig::PlatformPos_Y * CConfig::ResolutionScale;
+    PlatformRect.right = PlatformRect.left + width * CConfig::ResolutionScale;
+    PlatformRect.bottom = PlatformRect.top + Height * CConfig::ResolutionScale;
+
+    if (PlatformState == EPlatformState::Meltdown)
+    {
+        OldPlatformRect.bottom = (CConfig::MaxLevelPos_Y + 1) * CConfig::ResolutionScale;
+    }
+    InvalidateRect(hWnd, &OldPlatformRect, FALSE);
+    InvalidateRect(hWnd, &PlatformRect, FALSE);
+}
+
+// Draw normal platform
+void CPlatform::DrawNormalState(HDC hdc, RECT& paintArea)
+{
+    int x = pos_X;
     int y = CConfig::PlatformPos_Y;
 
     RECT intersectionRect;
@@ -37,6 +97,7 @@ void CPlatform::Draw(HDC hdc, RECT& paintArea)
     {
         return;
     }
+
     //At first draw a rectangle with platform size and background color before drawing platform itself to clear after redraw
     SelectObject(hdc, CConfig::backgroundPen);
     SelectObject(hdc, CConfig::backgroundBrush);
@@ -48,7 +109,7 @@ void CPlatform::Draw(HDC hdc, RECT& paintArea)
     SelectObject(hdc, platformOrangeBrush);
 
     Ellipse(hdc, x * CConfig::ResolutionScale, y * CConfig::ResolutionScale, (x + CircleSize) * CConfig::ResolutionScale, (y + CircleSize) * CConfig::ResolutionScale); //Draw a ellipse in rectangle
-    Ellipse(hdc, (x + SpaceBetweenCircles) * CConfig::ResolutionScale, y * CConfig::ResolutionScale, (x + SpaceBetweenCircles + CircleSize) * CConfig::ResolutionScale, (y + CircleSize) * CConfig::ResolutionScale);
+    Ellipse(hdc, (x + spaceBetweenCircles) * CConfig::ResolutionScale, y * CConfig::ResolutionScale, (x + spaceBetweenCircles + CircleSize) * CConfig::ResolutionScale, (y + CircleSize) * CConfig::ResolutionScale);
 
     //Rectangle platform part
     SelectObject(hdc, platformGreenPen);
@@ -68,16 +129,40 @@ void CPlatform::Draw(HDC hdc, RECT& paintArea)
     Rectangle(hdc, (x + 4 - 3) * CConfig::ResolutionScale, (y + 1 + 1) * CConfig::ResolutionScale, (x + 4) * CConfig::ResolutionScale - 7, (y + 1) * CConfig::ResolutionScale + 9);
 }
 
-// Redraw platform in other position (moving)
-void CPlatform::ReDraw(HWND hWnd)
+// Draw platform when it is meltdown
+void CPlatform::DrawMeltingState(HDC hdc, RECT& paintArea)
 {
-    OldPlatformRect = PlatformRect;
+    int meltingAreaWidth = width * CConfig::ResolutionScale;
+    int meltingAreaHeight = Height * CConfig::ResolutionScale + 1;
+    int x, y = 0;
+    int offset_Y = 0;
+    COLORREF pixel = 0;
+    COLORREF bgPixel = RGB(CConfig::backgroundColor.R, CConfig::backgroundColor.G, CConfig::backgroundColor.B);
+    RECT intersectionRect;
+    
+    if (!IntersectRect(&intersectionRect, &paintArea, &PlatformRect))
+    {
+        return;
+    }
 
-    PlatformRect.left = Pos_X * CConfig::ResolutionScale;
-    PlatformRect.top = CConfig::PlatformPos_Y * CConfig::ResolutionScale;
-    PlatformRect.right = PlatformRect.left + Width * CConfig::ResolutionScale;
-    PlatformRect.bottom = PlatformRect.top + Height * CConfig::ResolutionScale;
+    for (int i = 0; i < meltingAreaWidth; ++i)
+    {
+        offset_Y = CConfig::Rand(MeltingSpeed) + 1;
+        x = PlatformRect.left + i;
 
-    InvalidateRect(hWnd, &OldPlatformRect, FALSE);
-    InvalidateRect(hWnd, &PlatformRect, FALSE);
+        for (int j = 0; j < meltingAreaHeight; ++j)
+        {
+            y = meltingPlatformPos_Y[i] - j;
+            pixel = GetPixel(hdc, x, y);
+            SetPixel(hdc, x, y + offset_Y, pixel);
+        }
+
+        for (int k = 0; k < offset_Y; ++k)
+        {
+            y = meltingPlatformPos_Y[i] - meltingAreaHeight + k + 1;
+            SetPixel(hdc, x, y, bgPixel);
+        }
+
+        meltingPlatformPos_Y[i] += offset_Y;
+    }
 }
