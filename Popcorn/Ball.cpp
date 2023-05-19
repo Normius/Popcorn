@@ -2,10 +2,14 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // class CBall
+
+const float CBall::StartBallPos_Y = 181.0f;
+
 //Ctor
 CBall::CBall()
-    :ballPos_X(20), ballPos_Y(170), ballSpeed(3.0f), ballDirection(static_cast<float>(M_PI - M_PI / 4)), ballWhitePen(0), ballWhiteBrush(0), BallRect{}, OldBallRect{}
+    :BallState(EBallState::BallNormal), ballPos_X(0.0f), ballPos_Y(StartBallPos_Y), ballSpeed(0.0f), ballDirection(0), ballWhitePen(0), ballWhiteBrush(0), BallRect{}, OldBallRect{}
 {
+    SetState(EBallState::BallNormal, 0);
 }
 
 //StartInit for ball
@@ -20,35 +24,40 @@ void CBall::Draw(HDC hdc, RECT& paintArea)
     RECT intersectionRect;
 
     //Check for intersection levelRECT with paint RECT
-    if (!IntersectRect(&intersectionRect, &paintArea, &BallRect))
+    if (IntersectRect(&intersectionRect, &paintArea, &OldBallRect))
     {
-        return;
+        //At first draw a rectangle with platform size and background color before drawing platform itself to clear after redraw
+        SelectObject(hdc, CConfig::backgroundPen);
+        SelectObject(hdc, CConfig::backgroundBrush);
+
+        Ellipse(hdc, OldBallRect.left, OldBallRect.top, OldBallRect.right - 1, OldBallRect.bottom - 1);
     }
-    //At first draw a rectangle with platform size and background color before drawing platform itself to clear after redraw
-    SelectObject(hdc, CConfig::backgroundPen);
-    SelectObject(hdc, CConfig::backgroundBrush);
+    
+    if (IntersectRect(&intersectionRect, &paintArea, &BallRect))
+    {
+        //Draw a ball
+        SelectObject(hdc, ballWhitePen);
+        SelectObject(hdc, ballWhiteBrush);
 
-    Ellipse(hdc, OldBallRect.left, OldBallRect.top, OldBallRect.right - 1, OldBallRect.bottom - 1);
-
-    //Draw a ball
-    SelectObject(hdc, ballWhitePen);
-    SelectObject(hdc, ballWhiteBrush);
-
-    Ellipse(hdc, BallRect.left, BallRect.top, BallRect.right - 1, BallRect.bottom - 1);
+        Ellipse(hdc, BallRect.left, BallRect.top, BallRect.right - 1, BallRect.bottom - 1);
+    }
 }
 
 //Redraw ball in other position (moving)
 void CBall::Move(CLevel* level, int platformPos_X,  int platformWidth)
 {
-    int nextBallPos_X, nextBallPos_Y;
+    float nextBallPos_X, nextBallPos_Y = 0.0f;
     int maxLevelPos_x = CConfig::MaxLevelPos_X - CConfig::BallSize; //correcting max ball position accounting ball size for X
     int maxLevelPos_y = CConfig::MaxLevelPos_Y - CConfig::BallSize; //correcting max ball position accounting ball size for Y
+
+    if (BallState != EBallState::BallNormal)
+        return;
 
     OldBallRect = BallRect;
 
     //Calculate new ball direction and position
-    nextBallPos_X = ballPos_X + static_cast<int>(ballSpeed * cos(ballDirection));
-    nextBallPos_Y = ballPos_Y - static_cast<int>(ballSpeed * sin(ballDirection));
+    nextBallPos_X = ballPos_X + ballSpeed * cos(ballDirection);
+    nextBallPos_Y = ballPos_Y - ballSpeed * sin(ballDirection);
 
     //Check new position for collision with level border and change direction and new position consider reflection
     //Left border reflection
@@ -72,8 +81,16 @@ void CBall::Move(CLevel* level, int platformPos_X,  int platformWidth)
     //Bottom border reflection
     if (nextBallPos_Y > maxLevelPos_y)
     {
-        nextBallPos_Y = maxLevelPos_y - (nextBallPos_Y - maxLevelPos_y);
-        ballDirection = -ballDirection;
+        if (level->HasFloor)
+        {
+            nextBallPos_Y = maxLevelPos_y - (nextBallPos_Y - maxLevelPos_y);
+            ballDirection = -ballDirection;
+        }
+        else
+        {
+            if (nextBallPos_Y > maxLevelPos_y + CConfig::BallSize + 1) //allows ball to fall below the screen
+                BallState = EBallState::BallMissing;
+        }
     }
 
     //Check new position for collision with platform
@@ -92,8 +109,48 @@ void CBall::Move(CLevel* level, int platformPos_X,  int platformWidth)
     ballPos_X = nextBallPos_X;
     ballPos_Y = nextBallPos_Y;
 
-    BallRect.left = ballPos_X * CConfig::ResolutionScale;
-    BallRect.top = ballPos_Y * CConfig::ResolutionScale;
+    ReDraw();
+}
+
+void CBall::SetState(EBallState newballstate, int pos_x)
+{
+    switch (newballstate)
+    {
+    case BallNormal:
+        ballPos_X = static_cast<float>(pos_x - CConfig::BallSize / 2);
+        ballPos_Y = StartBallPos_Y;
+        ballSpeed = 3.0f;
+        ballDirection = (static_cast<float>(M_PI - M_PI / 4));
+        ReDraw();
+        break;
+
+    case BallMissing:
+        ballSpeed = 0.0f;
+        break;
+
+    case BallOnPlatform:
+        ballPos_X = static_cast<float>(pos_x - CConfig::BallSize / 2);
+        ballPos_Y = StartBallPos_Y;
+        ballSpeed = 0.0f;
+        ballDirection = (static_cast<float>(M_PI - M_PI / 4));
+        ReDraw();
+        break;
+    default:
+        break;
+    }
+
+    BallState = newballstate;
+}
+
+EBallState CBall::GetState()
+{
+    return BallState;
+}
+
+void CBall::ReDraw()
+{
+    BallRect.left = static_cast<int>(ballPos_X * CConfig::ResolutionScale);
+    BallRect.top = static_cast<int>(ballPos_Y * CConfig::ResolutionScale);
     BallRect.right = BallRect.left + CConfig::BallSize * CConfig::ResolutionScale;
     BallRect.bottom = BallRect.top + CConfig::BallSize * CConfig::ResolutionScale;
 

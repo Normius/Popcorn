@@ -18,7 +18,9 @@ public:
 
     void Init();
     void Draw(HDC hdc, RECT& paintArea);
-    void CheckBallHitBrick(int& nextBallPos_Y, float& ballDirection);
+    void CheckBallHitBrick(float& nextBallPos_Y, float& ballDirection);
+
+    bool HasFloor;
 
     CActiveBrick ActiveBrick;
 

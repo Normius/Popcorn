@@ -4,6 +4,7 @@
 // class CGameEngine
 //ctor
 CGameEngine::CGameEngine()
+    :GameState(EGameState::LevelPlaying)
 {
 }
 
@@ -16,11 +17,14 @@ void CGameEngine::InitGameEngine(HWND hWnd)
     CActiveBrick::SetupFadingBrickColors();
 
     Level.Init();
-    Ball.Init();
     Platform.Init();
+    Ball.Init();
     Border.Init();
 
-    Platform.SetState(EPlatformState::Rolling);
+    Ball.SetState(EBallState::BallNormal, Platform.pos_X + Platform.width / 2);
+
+    Platform.SetState(EPlatformState::PlatformNormal);
+    Platform.ReDraw();
 
     //Windows timer function
     SetTimer(CConfig::HWnd, TimerID, 1000 / CConfig::FPS, 0);
@@ -70,6 +74,11 @@ int CGameEngine::OnKeyDown(EKeyType keyType)
         break;
 
     case SpaceKey:
+        if (Platform.GetState() == EPlatformState::PlatformHoldingBall)
+        {
+            Ball.SetState(EBallState::BallNormal, Platform.pos_X + Platform.width / 2);
+            Platform.SetState(EPlatformState::PlatformNormal);
+        }
         break;
     }
     return 0;
@@ -79,11 +88,39 @@ int CGameEngine::On_Timer()
 {
     ++CConfig::TimerCounter;
 
-    Ball.Move(&Level, Platform.pos_X, Platform.width); //Bind ball moving to the timer 
+    switch (GameState)
+    {
+    case LevelPlaying:
+        Ball.Move(&Level, Platform.pos_X, Platform.width); //Bind ball moving to the timer 
 
-    Level.ActiveBrick.Act(); //Bind active brick fading to the timer
+        if (Ball.GetState() == EBallState::BallMissing)
+        {
+            GameState = EGameState::BallLost;
+            Platform.SetState(EPlatformState::PlatformMeltdown);
+        }
+        break;
 
+    case BallLost:
+        if (Platform.GetState() == EPlatformState::PlatformMissing)
+        { 
+            GameState = EGameState::RestartLevel;
+            Platform.SetState(EPlatformState::PlatformRolling);
+        }
+        break;
+
+    case RestartLevel:
+        if (Platform.GetState() == EPlatformState::PlatformHoldingBall)
+        {
+            GameState = EGameState::LevelPlaying;
+            Ball.SetState(EBallState::BallOnPlatform, Platform.pos_X + Platform.width / 2);
+        }
+        break;
+
+    default:
+        break;
+    }
     Platform.Act();
+    //Level.ActiveBrick.Act(); //Bind active brick fading to the timer
 
     return 0;
 }

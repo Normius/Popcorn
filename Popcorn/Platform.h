@@ -4,11 +4,12 @@
 
 enum EPlatformState
 {
-    Missing,
-    Normal,
-    Meltdown,
-    Rolling,
-    Expanding
+    PlatformMissing,
+    PlatformNormal,
+    PlatformHoldingBall,
+    PlatformMeltdown,
+    PlatformRolling,
+    PlatformExpanding
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -20,6 +21,7 @@ public:
 
     void Init();
     void Act();
+    EPlatformState GetState();
     void SetState(EPlatformState newState);
     void Draw(HDC hdc, RECT& paintArea);
     void ReDraw();
@@ -27,7 +29,6 @@ public:
     int width;
     int pos_X;
     int step_X;
-    
 
 private:
     void ClearBackground(HDC hdc);
@@ -42,7 +43,6 @@ private:
     int spaceBetweenCircles;
     int meltingPlatformPos_Y[NormalWidth * CConfig::ResolutionScale];
     int rollingStep;
-    
 
     RECT PlatformRect, OldPlatformRect;
     HPEN platformCircleOrangePen, platformGreenPen, platformGreyPen;
@@ -52,7 +52,7 @@ private:
     static const int Height = 7;
     static const int NormalSpaceBetweenCircles = NormalWidth - CircleSize;
     static const int MeltingSpeed = 3;
-    static const int rollingStepMax = 8;
+    static const int rollingStepMax = 16;
     static const int stopRollingPos_X = 99;
     static const int rollingPlatformSpeed = 3;
 };

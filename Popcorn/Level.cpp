@@ -22,7 +22,7 @@ char CLevel::Level_01[CConfig::LevelHeightSize][CConfig::LevelWidthSize]
 // class CLevel
 //Ctor
 CLevel::CLevel()
-    :ActiveBrick(BLUE), brickPurplePen(0), brickBluePen(0), brickWhiteLetterPen(0), brickPurpleBrush(0), brickBlueBrush(0), LevelRect{}
+    :HasFloor(false), ActiveBrick(BLUE), brickPurplePen(0), brickBluePen(0), brickWhiteLetterPen(0), brickPurpleBrush(0), brickBlueBrush(0), LevelRect{}
 {
 }
 
@@ -63,7 +63,7 @@ void CLevel::Draw(HDC hdc, RECT& paintArea)
 }
 
 //Check new position for collision with level bricks and change direction and position consider reflection
-void CLevel::CheckBallHitBrick(int& nextBallPos_Y, float& ballDirection)
+void CLevel::CheckBallHitBrick(float& nextBallPos_Y, float& ballDirection)
 {
     int brickPos_Y = CConfig::LevelOffset_Y + CConfig::LevelHeightSize * CConfig::CellHeight;
 

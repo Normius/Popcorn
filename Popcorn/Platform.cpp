@@ -4,7 +4,7 @@
 // class CPlatform
 //Ctor
 CPlatform::CPlatform()
-    :width(NormalWidth), pos_X(CConfig::BorderOffset_X), step_X(CConfig::ResolutionScale * 2), PlatformState(EPlatformState::Normal), spaceBetweenCircles(NormalSpaceBetweenCircles), rollingStep(0),
+    :width(NormalWidth), pos_X(CConfig::BorderOffset_X), step_X(CConfig::ResolutionScale * 2), PlatformState(EPlatformState::PlatformNormal), spaceBetweenCircles(NormalSpaceBetweenCircles), rollingStep(0),
     PlatformRect{}, OldPlatformRect{}, platformCircleOrangePen(0), platformGreenPen(0), platformGreyPen(0), platformCircleOrangeBrush(0), platformGreenBrush(0), platformGreyBrush(0)
 {
     pos_X = (CConfig::MaxLevelPos_X - width) / 2;
@@ -31,9 +31,9 @@ void CPlatform::Act()
 {
     switch (PlatformState)
     {
-    case Meltdown:
-    case Rolling:
-    case Expanding:
+    case PlatformMeltdown:
+    case PlatformRolling:
+    case PlatformExpanding:
         ReDraw();
         break;
     default:
@@ -42,6 +42,12 @@ void CPlatform::Act()
 }
 
 // Redraw platform on timer when it is meltdown
+EPlatformState CPlatform::GetState()
+{
+    return PlatformState;
+}
+
+// Set platform state
 void CPlatform::SetState(EPlatformState state)
 {
     int size = 0;
@@ -50,7 +56,7 @@ void CPlatform::SetState(EPlatformState state)
 
     switch (state)
     {
-    case EPlatformState::Meltdown:
+    case EPlatformState::PlatformMeltdown:
         size = sizeof(meltingPlatformPos_Y) / sizeof(meltingPlatformPos_Y[0]);
 
         for (int i = 0; i < size; ++i)
@@ -58,7 +64,7 @@ void CPlatform::SetState(EPlatformState state)
             meltingPlatformPos_Y[i] = PlatformRect.bottom;
         }
         break;
-    case EPlatformState::Rolling:
+    case EPlatformState::PlatformRolling:
         pos_X = CConfig::MaxLevelPos_X - 1;
         rollingStep = rollingStepMax - 1;
         break;
@@ -80,21 +86,21 @@ void CPlatform::Draw(HDC hdc, RECT& paintArea)
 
     switch (PlatformState)
     {
-    case Normal:
+    case PlatformNormal:
         DrawNormalState(hdc, paintArea);
         break;
 
-    case Meltdown:
+    case PlatformMeltdown:
         DrawMeltingState(hdc, paintArea);
         break;
 
-    case Rolling:
+    case PlatformRolling:
         DrawRollingState(hdc, paintArea);
         break;
-    case Expanding:
+    case PlatformExpanding:
         DrawExpandingState(hdc, paintArea);
         break;
-    case Missing:
+    case PlatformMissing:
         break;
     default:
         break;
@@ -108,7 +114,7 @@ void CPlatform::ReDraw()
 
     int platformWidth = 0;
 
-    if (PlatformState == EPlatformState::Rolling)
+    if (PlatformState == EPlatformState::PlatformRolling)
         platformWidth = CircleSize; //+ 3 to 
     else
         platformWidth = width;
@@ -118,8 +124,8 @@ void CPlatform::ReDraw()
     PlatformRect.right = PlatformRect.left + platformWidth * CConfig::ResolutionScale;
     PlatformRect.bottom = PlatformRect.top + Height * CConfig::ResolutionScale;
 
-    if (PlatformState == EPlatformState::Meltdown)
-        OldPlatformRect.bottom = (CConfig::MaxLevelPos_Y + 1) * CConfig::ResolutionScale;
+    if (PlatformState == EPlatformState::PlatformMeltdown)
+        OldPlatformRect.bottom = CConfig::MaxLevelPos_Y * CConfig::ResolutionScale; //could be +1 to maxLevelPos_Y
 
     InvalidateRect(CConfig::HWnd, &OldPlatformRect, FALSE);
     InvalidateRect(CConfig::HWnd, &PlatformRect, FALSE);
@@ -179,11 +185,20 @@ void CPlatform::DrawMeltingState(HDC hdc, RECT& paintArea)
     int meltingAreaHeight = Height * CConfig::ResolutionScale + 1;
     int x, y = 0;
     int offset_Y = 0;
+    bool meltingProcess = false;
     COLORREF pixel = 0;
     COLORREF bgPixel = RGB(CConfig::backgroundColor.R, CConfig::backgroundColor.G, CConfig::backgroundColor.B);
 
     for (int i = 0; i < meltingAreaWidth; ++i)
     {
+        if (meltingPlatformPos_Y[i] > (CConfig::MaxLevelPos_Y * CConfig::ResolutionScale + meltingAreaHeight))
+        {
+            meltingProcess = false;
+            continue;
+        }
+
+        meltingProcess = true;
+
         offset_Y = CConfig::Rand(MeltingSpeed) + 1;
         x = PlatformRect.left + i;
 
@@ -197,12 +212,15 @@ void CPlatform::DrawMeltingState(HDC hdc, RECT& paintArea)
 
         for (int k = 0; k < offset_Y; ++k)
         {
-            y = meltingPlatformPos_Y[i] - meltingAreaHeight + k + 1;
+            y = meltingPlatformPos_Y[i] - meltingAreaHeight + k; //could be +1
             SetPixel(hdc, x, y, bgPixel);
         }
 
         meltingPlatformPos_Y[i] += offset_Y;
     }
+
+    if (meltingProcess == false)
+        PlatformState = EPlatformState::PlatformMissing;
 }
 
 // Draw rolling platform at the level start
@@ -261,7 +279,7 @@ void CPlatform::DrawRollingState(HDC hdc, RECT& paintArea)
     if (pos_X <= stopRollingPos_X)
     {
         pos_X += rollingPlatformSpeed;
-        PlatformState = EPlatformState::Expanding;
+        PlatformState = EPlatformState::PlatformExpanding;
         spaceBetweenCircles = 1;
     }
 }
@@ -278,7 +296,7 @@ void CPlatform::DrawExpandingState(HDC hdc, RECT& paintArea)
     {
         spaceBetweenCircles = NormalSpaceBetweenCircles;
 
-        PlatformState = EPlatformState::Normal;
+        PlatformState = EPlatformState::PlatformHoldingBall;
         ReDraw();
     }
 }
