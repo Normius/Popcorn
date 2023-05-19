@@ -4,7 +4,6 @@
 // class CGameEngine
 //ctor
 CGameEngine::CGameEngine()
-    :HWnd(0)
 {
 }
 
@@ -12,7 +11,7 @@ CGameEngine::CGameEngine()
 void CGameEngine::InitGameEngine(HWND hWnd)
 {
     //Initialize window handle by value from Main
-    HWnd = hWnd;
+    CConfig::HWnd = hWnd;
 
     CActiveBrick::SetupFadingBrickColors();
 
@@ -21,15 +20,16 @@ void CGameEngine::InitGameEngine(HWND hWnd)
     Platform.Init();
     Border.Init();
 
+    Platform.SetState(EPlatformState::Rolling);
+
     //Windows timer function
-    SetTimer(HWnd, TimerID, 1000 / CConfig::FPS, 0);
+    SetTimer(CConfig::HWnd, TimerID, 1000 / CConfig::FPS, 0);
 }
 
 // Draw every frame in game
 void CGameEngine::DrawFrame(HDC hdc, RECT& paintArea)
 {
-    Level.Draw(HWnd, hdc, paintArea);
-    Platform.Draw(hdc, paintArea);
+    Level.Draw(hdc, paintArea);
 
    /* for (int i = 0; i < 16; ++i)
     {
@@ -38,8 +38,8 @@ void CGameEngine::DrawFrame(HDC hdc, RECT& paintArea)
     }*/
     
     Ball.Draw(hdc, paintArea);
-
     Border.Draw(hdc, paintArea);
+    Platform.Draw(hdc, paintArea);
 }
 
 //Handles keybord's keys
@@ -55,7 +55,7 @@ int CGameEngine::OnKeyDown(EKeyType keyType)
             Platform.pos_X = CConfig::BorderOffset_X;
         }
 
-        Platform.ReDraw(HWnd);
+        Platform.ReDraw();
         break;
 
     case RightArrowKey:
@@ -66,7 +66,7 @@ int CGameEngine::OnKeyDown(EKeyType keyType)
             Platform.pos_X = CConfig::MaxLevelPos_X - Platform.width + 1;
         }
 
-        Platform.ReDraw(HWnd);
+        Platform.ReDraw();
         break;
 
     case SpaceKey:
@@ -79,11 +79,11 @@ int CGameEngine::On_Timer()
 {
     ++CConfig::TimerCounter;
 
-    Ball.Move(HWnd, &Level, Platform.pos_X, Platform.width); //Bind ball moving to the timer 
+    Ball.Move(&Level, Platform.pos_X, Platform.width); //Bind ball moving to the timer 
 
-    Level.ActiveBrick.Act(HWnd); //Bind active brick fading to the timer
+    Level.ActiveBrick.Act(); //Bind active brick fading to the timer
 
-    Platform.Act(HWnd);
+    Platform.Act();
 
     return 0;
 }

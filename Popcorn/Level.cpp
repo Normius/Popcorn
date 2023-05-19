@@ -42,7 +42,7 @@ void CLevel::Init()
 }
 
 // Draw all bricks on level
-void CLevel::Draw(HWND hwnd, HDC hdc, RECT& paintArea)
+void CLevel::Draw(HDC hdc, RECT& paintArea)
 {
     RECT intersectionRect;
 

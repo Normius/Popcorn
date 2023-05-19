@@ -38,9 +38,11 @@ void CBall::Draw(HDC hdc, RECT& paintArea)
 }
 
 //Redraw ball in other position (moving)
-void CBall::Move(HWND hWnd, CLevel* level, int platformPos_X,  int platformWidth)
+void CBall::Move(CLevel* level, int platformPos_X,  int platformWidth)
 {
     int nextBallPos_X, nextBallPos_Y;
+    int maxLevelPos_x = CConfig::MaxLevelPos_X - CConfig::BallSize; //correcting max ball position accounting ball size for X
+    int maxLevelPos_y = CConfig::MaxLevelPos_Y - CConfig::BallSize; //correcting max ball position accounting ball size for Y
 
     OldBallRect = BallRect;
 
@@ -62,16 +64,16 @@ void CBall::Move(HWND hWnd, CLevel* level, int platformPos_X,  int platformWidth
         ballDirection = -ballDirection;
     }
     //Right border reflection
-    if (nextBallPos_X > CConfig::MaxLevelPos_X - CConfig::BallSize)
+    if (nextBallPos_X > maxLevelPos_x)
     {
-        nextBallPos_X = CConfig::MaxLevelPos_X - CConfig::BallSize - (nextBallPos_X - (CConfig::MaxLevelPos_X - CConfig::BallSize)); //consider ball speed (MaxLevelPos_X + BallSpeed)
+        nextBallPos_X = maxLevelPos_x - (nextBallPos_X - (maxLevelPos_x)); //consider ball speed (MaxLevelPos_X + BallSpeed)
         ballDirection = static_cast<float>(M_PI) - ballDirection;
     }
     //Bottom border reflection
-    if (nextBallPos_Y > CConfig::MaxLevelPos_Y - CConfig::BallSize)
+    if (nextBallPos_Y > maxLevelPos_y)
     {
-        nextBallPos_Y = CConfig::MaxLevelPos_Y - CConfig::BallSize - (nextBallPos_Y - (CConfig::MaxLevelPos_Y - CConfig::BallSize));
-        ballDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - ballDirection;
+        nextBallPos_Y = maxLevelPos_y - (nextBallPos_Y - maxLevelPos_y);
+        ballDirection = -ballDirection;
     }
 
     //Check new position for collision with platform
@@ -80,7 +82,7 @@ void CBall::Move(HWND hWnd, CLevel* level, int platformPos_X,  int platformWidth
         if (nextBallPos_X >= platformPos_X && nextBallPos_X <= platformPos_X + platformWidth)
         {
             nextBallPos_Y = CConfig::PlatformPos_Y - CConfig::BallSize - (nextBallPos_Y - (CConfig::PlatformPos_Y - CConfig::BallSize));
-            ballDirection = static_cast<float>(M_PI) + static_cast<float>(M_PI) - ballDirection;
+            ballDirection = -ballDirection;
         }
     }
 
@@ -95,6 +97,6 @@ void CBall::Move(HWND hWnd, CLevel* level, int platformPos_X,  int platformWidth
     BallRect.right = BallRect.left + CConfig::BallSize * CConfig::ResolutionScale;
     BallRect.bottom = BallRect.top + CConfig::BallSize * CConfig::ResolutionScale;
 
-    InvalidateRect(hWnd, &OldBallRect, FALSE);
-    InvalidateRect(hWnd, &BallRect, FALSE);
+    InvalidateRect(CConfig::HWnd, &OldBallRect, FALSE);
+    InvalidateRect(CConfig::HWnd, &BallRect, FALSE);
 }

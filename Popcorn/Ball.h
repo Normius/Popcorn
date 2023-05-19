@@ -13,7 +13,7 @@ public:
     void Init();
 
     void Draw(HDC hdc, RECT& painArea);
-    void Move(HWND hWnd, CLevel* level, int platformPos_X, int platformWidth);
+    void Move(CLevel* level, int platformPos_X, int platformWidth);
 
 private:
     int ballPos_X;

@@ -221,7 +221,8 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 /*
 
 Game over when losing ball
-1. Platform meltdown when lose (animation)
+DONE! 1. Platform meltdown when lose (animation)  
+---------------------------------------------------------------------------------
 2. Platform appearance at the start (rolling out animations) 
 3. Platform appearance at the start (extension animations) 
 4. Ball start and ball states (function)

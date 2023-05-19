@@ -17,7 +17,7 @@ public:
     CLevel();
 
     void Init();
-    void Draw(HWND hwnd, HDC hdc, RECT& paintArea);
+    void Draw(HDC hdc, RECT& paintArea);
     void CheckBallHitBrick(int& nextBallPos_Y, float& ballDirection);
 
     CActiveBrick ActiveBrick;

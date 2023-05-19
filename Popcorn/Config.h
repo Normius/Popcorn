@@ -25,6 +25,7 @@ public:
     static const CColor backgroundColor, brickPurpleColor, brickBlueColor;
     static HPEN backgroundPen;
     static HBRUSH backgroundBrush;
+    static HWND HWnd;
 
     static const int PlatformPos_Y = 185;
     static const int ResolutionScale = 3;

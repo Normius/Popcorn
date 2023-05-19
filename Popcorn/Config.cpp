@@ -17,6 +17,7 @@ const CColor CConfig::brickBlueColor(85, 255, 255);
 
 HPEN CConfig::backgroundPen;
 HBRUSH CConfig::backgroundBrush;
+HWND CConfig::HWnd;
 
 //Assigns color to pens and brushes
 void CConfig::CreatePenAndBrush(const CColor& color, HPEN& pen, HBRUSH& brush)

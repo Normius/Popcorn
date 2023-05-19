@@ -28,8 +28,6 @@ public:
     int On_Timer();
 
 private:
-    HWND HWnd;
-
     CBall Ball;
     CLevel Level;
     CPlatform Platform;

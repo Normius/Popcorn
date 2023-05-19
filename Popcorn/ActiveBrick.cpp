@@ -1,4 +1,4 @@
-#include "ActiveBrick.h"
+﻿#include "ActiveBrick.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // class CActiveBrick
@@ -14,12 +14,12 @@ CActiveBrick::CActiveBrick(EBrickColor brickColor)
 }
 
 //Redraw fading bricks
-void CActiveBrick::Act(HWND hwnd)
+void CActiveBrick::Act()
 {
     if (fadeStep < fadeStepMax - 1)
     {
         ++fadeStep;
-        InvalidateRect(hwnd, &disappearingBrick, FALSE);
+        InvalidateRect(CConfig::HWnd, &disappearingBrick, FALSE);
     }
 }
 

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Config.h"
 
@@ -17,7 +17,7 @@ public:
     //CActiveBrick() = default;
     CActiveBrick(EBrickColor brickColor);
 
-    void Act(HWND hwnd);
+    void Act();
     void Draw(HDC hdc, RECT& paintArea);
 
     static void SetupFadingBrickColors();
