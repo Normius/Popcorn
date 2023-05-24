@@ -21,6 +21,7 @@ public:
     static void CreatePenAndBrush(unsigned char r, unsigned char g, unsigned char b, HPEN& pen, HBRUSH& brush);
     static int Rand(int range);
 
+    static bool LevelHasFloor;
     static int TimerCounter;
     static const CColor backgroundColor, brickPurpleColor, brickBlueColor;
     static HPEN backgroundPen;

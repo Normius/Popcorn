@@ -9,6 +9,7 @@ CColor::CColor(unsigned char r, unsigned char g, unsigned char b)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // class CConfig
+bool CConfig::LevelHasFloor = false;
 int CConfig::TimerCounter = 0;
 
 const CColor CConfig::backgroundColor(0, 0, 0);

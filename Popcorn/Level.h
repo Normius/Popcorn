@@ -20,8 +20,6 @@ public:
     void Draw(HDC hdc, RECT& paintArea);
     void CheckBallHitBrick(float& nextBallPos_Y, float& ballDirection);
 
-    bool HasFloor;
-
     CActiveBrick ActiveBrick;
 
 private:

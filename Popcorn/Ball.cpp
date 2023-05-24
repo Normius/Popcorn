@@ -4,10 +4,11 @@
 // class CBall
 
 const float CBall::StartBallPos_Y = 181.0f;
+const float CBall::Radius = 2.0f;
 
 //Ctor
 CBall::CBall()
-    :BallState(EBallState::BallNormal), ballPos_X(0.0f), ballPos_Y(StartBallPos_Y), ballSpeed(0.0f), ballDirection(0), ballWhitePen(0), ballWhiteBrush(0), BallRect{}, OldBallRect{}
+    :BallState(EBallState::BallNormal), ballCenterPos_X(0.0f), ballCenterPos_Y(StartBallPos_Y), ballSpeed(0.0f), restDistance(0.0f), ballDirection(0), ballWhitePen(0), ballWhiteBrush(0), BallRect{}, OldBallRect{}
 {
     SetState(EBallState::BallNormal, 0);
 }
@@ -44,82 +45,59 @@ void CBall::Draw(HDC hdc, RECT& paintArea)
 }
 
 //Redraw ball in other position (moving)
-void CBall::Move(CLevel* level, int platformPos_X,  int platformWidth)
+void CBall::Move(int platformPos_X,  int platformWidth, CLevel* level, CHitChecker *hitChecker)
 {
+    bool objectIntersection;
     float nextBallPos_X, nextBallPos_Y = 0.0f;
-    int maxLevelPos_x = CConfig::MaxLevelPos_X - CConfig::BallSize; //correcting max ball position accounting ball size for X
-    int maxLevelPos_y = CConfig::MaxLevelPos_Y - CConfig::BallSize; //correcting max ball position accounting ball size for Y
+    float stepSize = 1.0f / CConfig::ResolutionScale; //1 pxl (min distance in game)
 
     if (BallState != EBallState::BallNormal)
         return;
 
     OldBallRect = BallRect;
+    restDistance += ballSpeed;
 
-    //Calculate new ball direction and position
-    nextBallPos_X = ballPos_X + ballSpeed * cos(ballDirection);
-    nextBallPos_Y = ballPos_Y - ballSpeed * sin(ballDirection);
+    while (restDistance >= stepSize)
+    {
+        //Calculate new ball direction and position
+        nextBallPos_X = ballCenterPos_X + stepSize * cos(ballDirection);
+        nextBallPos_Y = ballCenterPos_Y - stepSize * sin(ballDirection);
 
-    //Check new position for collision with level border and change direction and new position consider reflection
-    //Left border reflection
-    if (nextBallPos_X < CConfig::BorderOffset_X)
-    {
-        nextBallPos_X = CConfig::BorderOffset_X - (nextBallPos_X - CConfig::BorderOffset_X);
-        ballDirection = static_cast<float>(M_PI) - ballDirection;
-    }
-    //Top border reflection
-    if (nextBallPos_Y < CConfig::BorderOffset_Y)
-    {
-        nextBallPos_Y = CConfig::BorderOffset_Y - (nextBallPos_Y - CConfig::BorderOffset_Y);
-        ballDirection = -ballDirection;
-    }
-    //Right border reflection
-    if (nextBallPos_X > maxLevelPos_x)
-    {
-        nextBallPos_X = maxLevelPos_x - (nextBallPos_X - (maxLevelPos_x)); //consider ball speed (MaxLevelPos_X + BallSpeed)
-        ballDirection = static_cast<float>(M_PI) - ballDirection;
-    }
-    //Bottom border reflection
-    if (nextBallPos_Y > maxLevelPos_y)
-    {
-        if (level->HasFloor)
+        objectIntersection = hitChecker->CheckHit(nextBallPos_X, nextBallPos_Y, this);
+
+        ////Check new position for collision with platform
+        //if (nextBallPos_Y > CConfig::PlatformPos_Y - CConfig::BallSize)
+        //{
+        //    if (nextBallPos_X >= platformPos_X && nextBallPos_X <= platformPos_X + platformWidth)
+        //    {
+        //        nextBallPos_Y = CConfig::PlatformPos_Y - CConfig::BallSize - (nextBallPos_Y - (CConfig::PlatformPos_Y - CConfig::BallSize));
+        //        ballDirection = -ballDirection;
+        //    }
+        //}
+
+        //level->CheckBallHitBrick(nextBallPos_Y, ballDirection);
+
+        if (!objectIntersection)
         {
-            nextBallPos_Y = maxLevelPos_y - (nextBallPos_Y - maxLevelPos_y);
-            ballDirection = -ballDirection;
-        }
-        else
-        {
-            if (nextBallPos_Y > maxLevelPos_y + CConfig::BallSize + 1) //allows ball to fall below the screen
-                BallState = EBallState::BallMissing;
+            //Set new ball position if ball doesn't interact with any object
+            ballCenterPos_X = nextBallPos_X;
+            ballCenterPos_Y = nextBallPos_Y;
+
+            restDistance -= stepSize;
         }
     }
-
-    //Check new position for collision with platform
-    if (nextBallPos_Y > CConfig::PlatformPos_Y - CConfig::BallSize)
-    {
-        if (nextBallPos_X >= platformPos_X && nextBallPos_X <= platformPos_X + platformWidth)
-        {
-            nextBallPos_Y = CConfig::PlatformPos_Y - CConfig::BallSize - (nextBallPos_Y - (CConfig::PlatformPos_Y - CConfig::BallSize));
-            ballDirection = -ballDirection;
-        }
-    }
-
-    level->CheckBallHitBrick(nextBallPos_Y, ballDirection);
-
-    //Set new ball position
-    ballPos_X = nextBallPos_X;
-    ballPos_Y = nextBallPos_Y;
-
     ReDraw();
 }
 
-void CBall::SetState(EBallState newballstate, int pos_x)
+void CBall::SetState(EBallState newballstate, float pos_x)
 {
     switch (newballstate)
     {
     case BallNormal:
-        ballPos_X = static_cast<float>(pos_x - CConfig::BallSize / 2);
-        ballPos_Y = StartBallPos_Y;
+        ballCenterPos_X = pos_x;
+        ballCenterPos_Y = StartBallPos_Y;
         ballSpeed = 3.0f;
+        restDistance = 0.0f;
         ballDirection = (static_cast<float>(M_PI - M_PI / 4));
         ReDraw();
         break;
@@ -129,9 +107,10 @@ void CBall::SetState(EBallState newballstate, int pos_x)
         break;
 
     case BallOnPlatform:
-        ballPos_X = static_cast<float>(pos_x - CConfig::BallSize / 2);
-        ballPos_Y = StartBallPos_Y;
+        ballCenterPos_X = pos_x;
+        ballCenterPos_Y = StartBallPos_Y;
         ballSpeed = 0.0f;
+        restDistance = 0.0f;
         ballDirection = (static_cast<float>(M_PI - M_PI / 4));
         ReDraw();
         break;
@@ -149,10 +128,10 @@ EBallState CBall::GetState()
 
 void CBall::ReDraw()
 {
-    BallRect.left = static_cast<int>(ballPos_X * CConfig::ResolutionScale);
-    BallRect.top = static_cast<int>(ballPos_Y * CConfig::ResolutionScale);
-    BallRect.right = BallRect.left + CConfig::BallSize * CConfig::ResolutionScale;
-    BallRect.bottom = BallRect.top + CConfig::BallSize * CConfig::ResolutionScale;
+    BallRect.left = static_cast<int>((ballCenterPos_X - Radius) * CConfig::ResolutionScale);
+    BallRect.top = static_cast<int>((ballCenterPos_Y - Radius) * CConfig::ResolutionScale);
+    BallRect.right = static_cast<int>((ballCenterPos_X + Radius) * CConfig::ResolutionScale);
+    BallRect.bottom = static_cast<int>((ballCenterPos_Y + Radius) * CConfig::ResolutionScale);
 
     InvalidateRect(CConfig::HWnd, &OldBallRect, FALSE);
     InvalidateRect(CConfig::HWnd, &BallRect, FALSE);

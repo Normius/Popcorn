@@ -21,7 +21,7 @@ void CGameEngine::InitGameEngine(HWND hWnd)
     Ball.Init();
     Border.Init();
 
-    Ball.SetState(EBallState::BallNormal, Platform.pos_X + Platform.width / 2);
+    Ball.SetState(EBallState::BallNormal, static_cast<float>(Platform.pos_X + Platform.width / 2));
 
     Platform.SetState(EPlatformState::PlatformNormal);
     Platform.ReDraw();
@@ -76,7 +76,7 @@ int CGameEngine::OnKeyDown(EKeyType keyType)
     case SpaceKey:
         if (Platform.GetState() == EPlatformState::PlatformHoldingBall)
         {
-            Ball.SetState(EBallState::BallNormal, Platform.pos_X + Platform.width / 2);
+            Ball.SetState(EBallState::BallNormal, static_cast<float>(Platform.pos_X + Platform.width / 2));
             Platform.SetState(EPlatformState::PlatformNormal);
         }
         break;
@@ -91,7 +91,7 @@ int CGameEngine::On_Timer()
     switch (GameState)
     {
     case LevelPlaying:
-        Ball.Move(&Level, Platform.pos_X, Platform.width); //Bind ball moving to the timer 
+        Ball.Move(Platform.pos_X, Platform.width, &Level, &Border); //Bind ball moving to the timer 
 
         if (Ball.GetState() == EBallState::BallMissing)
         {
@@ -112,7 +112,7 @@ int CGameEngine::On_Timer()
         if (Platform.GetState() == EPlatformState::PlatformHoldingBall)
         {
             GameState = EGameState::LevelPlaying;
-            Ball.SetState(EBallState::BallOnPlatform, Platform.pos_X + Platform.width / 2);
+            Ball.SetState(EBallState::BallOnPlatform, static_cast<float>(Platform.pos_X + Platform.width / 2));
         }
         break;
 

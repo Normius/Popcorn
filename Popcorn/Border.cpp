@@ -38,6 +38,46 @@ void CBorder::Draw(HDC hdc, RECT& paintArea)
     }
 }
 
+bool CBorder::CheckHit(float nextBallPos_X, float nextBallPos_Y, CBall *ball)
+{
+    bool objectIntersection = false;
+    //Check new position for collision with level border and change direction and new position consider reflection
+        //Left border reflection
+    if (nextBallPos_X - ball->Radius < CConfig::BorderOffset_X)
+    {
+        objectIntersection = true;
+        ball->ballDirection = static_cast<float>(M_PI) - ball->ballDirection;
+    }
+    //Top border reflection
+    if (nextBallPos_Y - ball->Radius < CConfig::BorderOffset_Y)
+    {
+        objectIntersection = true;
+        ball->ballDirection = -ball->ballDirection;
+    }
+    //Right border reflection
+    if (nextBallPos_X + ball->Radius > CConfig::MaxLevelPos_X)
+    {
+        objectIntersection = true;
+        ball->ballDirection = static_cast<float>(M_PI) - ball->ballDirection;
+    }
+    //Bottom border reflection
+    if (nextBallPos_Y + ball->Radius > CConfig::MaxLevelPos_Y)
+    {
+        if (CConfig::LevelHasFloor)
+        {
+            objectIntersection = true;
+            ball->ballDirection = -ball->ballDirection;
+        }
+        else
+        {
+            if (nextBallPos_Y + ball->Radius > static_cast<float>(CConfig::MaxLevelPos_Y) + ball->Radius * 4.0f) //allows ball to fall below the screen
+                ball->SetState(EBallState::BallMissing, nextBallPos_X);
+        }
+    }
+
+    return objectIntersection;
+}
+
 //Draw vertical element (tile) of level border 
 void CBorder::DrawVerticalElement(HDC hdc, int x, int y)
 {

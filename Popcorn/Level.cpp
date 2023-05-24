@@ -22,7 +22,7 @@ char CLevel::Level_01[CConfig::LevelHeightSize][CConfig::LevelWidthSize]
 // class CLevel
 //Ctor
 CLevel::CLevel()
-    :HasFloor(false), ActiveBrick(BLUE), brickPurplePen(0), brickBluePen(0), brickWhiteLetterPen(0), brickPurpleBrush(0), brickBlueBrush(0), LevelRect{}
+    :ActiveBrick(BLUE), brickPurplePen(0), brickBluePen(0), brickWhiteLetterPen(0), brickPurpleBrush(0), brickBlueBrush(0), LevelRect{}
 {
 }
 
