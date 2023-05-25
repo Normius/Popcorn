@@ -10,6 +10,21 @@ CPlatform::CPlatform()
     pos_X = (CConfig::MaxLevelPos_X - width) / 2;
 }
 
+bool CPlatform::CheckHit(float nextBallPos_X, float nextBallPos_Y, CBall* ball)
+{
+    //Check new position for collision with platform
+        if (nextBallPos_Y + ball->Radius > CConfig::PlatformPos_Y)
+        {
+            if (nextBallPos_X + ball->Radius >= pos_X && nextBallPos_X - ball->Radius <= pos_X + width)
+            {
+                ball->ballDirection = static_cast<float>(M_PI) + (static_cast<float>(M_PI) - ball->ballDirection);
+                return true;
+            }
+        }
+
+        return false;
+}
+
 //Start init
 void CPlatform::Init()
 {

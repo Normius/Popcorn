@@ -26,6 +26,32 @@ CLevel::CLevel()
 {
 }
 
+//Check new position for collision with level bricks and change direction and position consider reflection
+bool CLevel::CheckHit(float nextBallPos_X, float nextBallPos_Y, CBall* ball)
+{
+    int brickPos_Y = CConfig::LevelOffset_Y + CConfig::LevelHeightSize * CConfig::CellHeight;
+
+    for (int i = CConfig::LevelHeightSize - 1; i >= 0; --i)
+    {
+        for (int j = CConfig::LevelWidthSize - 1; j >= 0; --j)
+        {
+            if (Level_01[i][j] == 0)
+            {
+                continue;
+            }
+            if (nextBallPos_Y < brickPos_Y)
+            {
+                ball->ballDirection = -ball->ballDirection;
+                return true;
+            }
+        }
+
+        brickPos_Y -= CConfig::CellHeight;
+    }
+
+    return false;
+}
+
 //StartInit for Level
 void CLevel::Init()
 {
@@ -60,31 +86,6 @@ void CLevel::Draw(HDC hdc, RECT& paintArea)
     }
 
     ActiveBrick.Draw(hdc, paintArea);
-}
-
-//Check new position for collision with level bricks and change direction and position consider reflection
-void CLevel::CheckBallHitBrick(float& nextBallPos_Y, float& ballDirection)
-{
-    int brickPos_Y = CConfig::LevelOffset_Y + CConfig::LevelHeightSize * CConfig::CellHeight;
-
-    for (int i = CConfig::LevelHeightSize - 1; i >= 0; --i)
-    {
-        for (int j = CConfig::LevelWidthSize - 1; j >= 0; --j)
-        {
-            if (Level_01[i][j] == 0)
-            {
-                continue;
-            }
-            if (nextBallPos_Y < brickPos_Y)
-            {
-                nextBallPos_Y = brickPos_Y - (nextBallPos_Y - brickPos_Y);
-                ballDirection = -ballDirection;
-            }
-        }
-
-        brickPos_Y -= CConfig::CellHeight;
-    }
-
 }
 
 // Draw a brick

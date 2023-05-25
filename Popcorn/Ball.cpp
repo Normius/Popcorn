@@ -5,6 +5,9 @@
 
 const float CBall::StartBallPos_Y = 181.0f;
 const float CBall::Radius = 2.0f;
+int CBall::hitCheckersCount = 0;
+CHitChecker *CBall::HitCheckers[] = {};
+
 
 //Ctor
 CBall::CBall()
@@ -45,7 +48,7 @@ void CBall::Draw(HDC hdc, RECT& paintArea)
 }
 
 //Redraw ball in other position (moving)
-void CBall::Move(int platformPos_X,  int platformWidth, CLevel* level, CHitChecker *hitChecker)
+void CBall::Move(CHitChecker *levelhitchecker, CHitChecker *borderhitChecker, CHitChecker *platformhitChecker)
 {
     bool objectIntersection;
     float nextBallPos_X, nextBallPos_Y = 0.0f;
@@ -59,23 +62,16 @@ void CBall::Move(int platformPos_X,  int platformWidth, CLevel* level, CHitCheck
 
     while (restDistance >= stepSize)
     {
+        objectIntersection = false;
+
         //Calculate new ball direction and position
         nextBallPos_X = ballCenterPos_X + stepSize * cos(ballDirection);
         nextBallPos_Y = ballCenterPos_Y - stepSize * sin(ballDirection);
 
-        objectIntersection = hitChecker->CheckHit(nextBallPos_X, nextBallPos_Y, this);
-
-        ////Check new position for collision with platform
-        //if (nextBallPos_Y > CConfig::PlatformPos_Y - CConfig::BallSize)
-        //{
-        //    if (nextBallPos_X >= platformPos_X && nextBallPos_X <= platformPos_X + platformWidth)
-        //    {
-        //        nextBallPos_Y = CConfig::PlatformPos_Y - CConfig::BallSize - (nextBallPos_Y - (CConfig::PlatformPos_Y - CConfig::BallSize));
-        //        ballDirection = -ballDirection;
-        //    }
-        //}
-
-        //level->CheckBallHitBrick(nextBallPos_Y, ballDirection);
+        for (int i = 0; i < hitCheckersCount; ++i)
+        {
+            objectIntersection = objectIntersection || HitCheckers[i]->CheckHit(nextBallPos_X, nextBallPos_Y, this);
+        }
 
         if (!objectIntersection)
         {
@@ -124,6 +120,15 @@ void CBall::SetState(EBallState newballstate, float pos_x)
 EBallState CBall::GetState()
 {
     return BallState;
+}
+
+void CBall::AddHitChecker(CHitChecker* hitchecker)
+{
+    if (hitCheckersCount >= sizeof(HitCheckers) / sizeof(HitCheckers[0]))
+        return;
+
+    HitCheckers[hitCheckersCount] = hitchecker;
+    ++hitCheckersCount;
 }
 
 void CBall::ReDraw()

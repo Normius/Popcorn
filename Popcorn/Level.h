@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include "Config.h"
 #include "ActiveBrick.h"
+#include "Ball.h"
 
 enum EBrickLetter
 {
@@ -11,14 +11,16 @@ enum EBrickLetter
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // class CLevel
-class CLevel
+class CLevel: public CHitChecker
 {
 public:
     CLevel();
 
+    virtual bool CheckHit(float nextBallPos_X, float nextBallPos_Y, CBall* ball) override;
+
     void Init();
     void Draw(HDC hdc, RECT& paintArea);
-    void CheckBallHitBrick(float& nextBallPos_Y, float& ballDirection);
+    
 
     CActiveBrick ActiveBrick;
 

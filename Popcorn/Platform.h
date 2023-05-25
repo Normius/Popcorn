@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Config.h"
+#include "Ball.h"
 
 enum EPlatformState
 {
@@ -14,10 +14,12 @@ enum EPlatformState
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // class CPlatform
-class CPlatform
+class CPlatform: public CHitChecker
 {
 public:
     CPlatform();
+
+    virtual bool CheckHit(float nextBallPos_X, float nextBallPos_Y, CBall* ball) override;
 
     void Init();
     void Act();

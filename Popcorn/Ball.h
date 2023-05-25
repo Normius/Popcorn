@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Config.h"
-#include "Level.h"
 
 enum EBallState
 {
@@ -26,11 +25,15 @@ public:
 
     void Init();
     void Draw(HDC hdc, RECT& painArea);
-    void Move(int platformPos_X, int platformWidth, CLevel* level, CHitChecker *hitChecker);
+    void Move(CHitChecker* levelhitchecker, CHitChecker* borderhitChecker, CHitChecker* platformhitChecker);
     void SetState(EBallState newballstate, float pos_x);
 
-    float ballDirection;
     EBallState GetState();
+    
+    static void AddHitChecker(CHitChecker *hitchecker);
+
+    float ballDirection;
+    
 
     static const float Radius;
 
@@ -49,4 +52,7 @@ private:
     RECT BallRect, OldBallRect;
 
     static const float StartBallPos_Y;
+
+    static int hitCheckersCount;
+    static CHitChecker* HitCheckers[3];
 };

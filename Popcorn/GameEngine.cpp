@@ -21,6 +21,10 @@ void CGameEngine::InitGameEngine(HWND hWnd)
     Ball.Init();
     Border.Init();
 
+    CBall::AddHitChecker(&Border);
+    CBall::AddHitChecker(&Level);
+    CBall::AddHitChecker(&Platform);
+
     Ball.SetState(EBallState::BallNormal, static_cast<float>(Platform.pos_X + Platform.width / 2));
 
     Platform.SetState(EPlatformState::PlatformNormal);
@@ -91,7 +95,7 @@ int CGameEngine::On_Timer()
     switch (GameState)
     {
     case LevelPlaying:
-        Ball.Move(Platform.pos_X, Platform.width, &Level, &Border); //Bind ball moving to the timer 
+        Ball.Move(&Level, &Border, &Platform); //Bind ball moving to the timer 
 
         if (Ball.GetState() == EBallState::BallMissing)
         {
